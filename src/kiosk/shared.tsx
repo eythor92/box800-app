@@ -42,6 +42,19 @@ export function isLive(w: Workout | undefined, now: Date): w is Workout {
   return !!w && w.status === 'published' && (!w.publish_at || +new Date(w.publish_at) <= +now)
 }
 
+/** Stærð einingar (uppfærist þegar gluggi eða skilrúm breytist) */
+export function useSize(ref: React.RefObject<HTMLElement>): [number, number] {
+  const [wh, setWh] = useState<[number, number]>([0, 0])
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ro = new ResizeObserver(() => setWh([el.clientWidth, el.clientHeight]))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [ref])
+  return wh
+}
+
 export function fullscreen() {
   if (document.fullscreenElement) document.exitFullscreen().catch(() => undefined)
   else document.documentElement.requestFullscreen?.().catch(() => undefined)
@@ -51,8 +64,7 @@ export function fullscreen() {
 export function BigWorkout({ w, title, scale = 1, columns = 1 }: { w: Workout; title: string; scale?: number; columns?: number }) {
   const box = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState(0)
-  const [wh, setWh] = useState(() => [window.innerWidth, window.innerHeight])
-  useEffect(() => { const f = () => setWh([window.innerWidth, window.innerHeight]); window.addEventListener('resize', f); return () => window.removeEventListener('resize', f) }, [])
+  const wh = useSize(box)
 
   useLayoutEffect(() => {
     const el = box.current

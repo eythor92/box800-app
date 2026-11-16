@@ -26,7 +26,8 @@ npm run dev        # prófunarútgáfa ef .env.local vantar
 node supabase/test/test.mjs
 ```
 
-## Kiosk á stöðinni
-- `#/kiosk`: innskráningarskjár (tölvan á stöðinni). Iðkendur leita að nafni og skrá sig inn, þjálfari hakar við.
-- `#/kiosk/sjonvarp`: æfing dagsins á sjónvarp, letrið aðlagast skjánum. Stillingar birtast við músarhreyfingu.
-- Kiosk þarf innskráðan þjálfara eða eiganda. Ef 001 var keyrt áður en kiosk kom: keyra `004_kiosk.sql`.
+## Kiosk+ á stöðinni
+- `#/kiosk` opnar Kiosk+: veldu sniðmát (Coachboard, Æfing, eða bæði hlið við hlið). Tækið man valið.
+- Beinar slóðir: `#/kiosk?t=coachboard` (innskráningartölva), `#/kiosk?t=aefing` (sjónvarp), `#/kiosk?t=baedi`.
+- Hver gluggi hefur stærðarsleða, og hægt er að draga skilrúmið á milli glugga.
+- Þarf innskráðan þjálfara eða eiganda. Ef 001 var keyrt áður en kiosk kom: keyra `004_kiosk.sql`.
