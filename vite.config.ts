@@ -26,6 +26,9 @@ export default defineConfig({
         ],
       },
       workbox: {
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         // Prófunarútgáfan (PGlite) er stór og er bara sótt þegar hún er notuð
         globIgnores: ['**/postgres*', '**/*.wasm', '**/*.data', '**/demo-*.js', 'demo/**'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
