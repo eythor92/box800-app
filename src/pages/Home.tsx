@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useApp, useData } from '../ctx'
 import { Avatar, Icon } from '../components/Icon'
 import ClassSheet from '../components/ClassSheet'
-import { addDays, cap1, dayKey, dayStart, DAYS_SHORT, errMsg, hhmm, mondayOf, parseLines, relDay, today, whenText } from '../util'
+import { addDays, dayKey, dayStart, DAYS_SHORT, errMsg, hhmm, mondayOf, parseLines, relDay, today, whenText } from '../util'
 import { kg } from '../score'
 import { useNow } from '../kiosk/shared'
 import hero from '../assets/forsida.webp'
@@ -31,7 +31,6 @@ export default function Home() {
   const { data } = useData((a) => a.classList(dayStart(week), dayStart(addDays(t, 14))), [week, t])
   const { data: att } = useData((a) => a.myAttendance())
   const { data: lifts } = useData((a) => a.myLifts())
-  const { data: spot } = useData((a) => a.spotlight())
   const { data: programs } = useData((a) => a.programs())
   const { data: wods } = useData((a) => a.workouts(t, t), [t])
 
@@ -177,23 +176,6 @@ export default function Home() {
               <button key={l.movement_id} className="h-lift" onClick={() => nav('/arangur/' + l.movement_id)}>
                 <span>{l.name}</span><b>{kg(l.best_1rm ?? l.best)}<small> kg</small></b><em>{l.best_1rm ? '1RM' : 'Þyngst'} · {relDay(l.last_day + 'T12:00:00Z').toLowerCase()}</em>
               </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Kastljós */}
-      {spot && spot.length > 0 && (
-        <>
-          <div className="section-title"><Icon name="star" size={20} />Kastljós</div>
-          <div className="h-scroll">
-            {spot.map((s, i) => (
-              <div key={i} className="h-spot">
-                <span className="when">{cap1(relDay(s.at + 'T12:00:00Z'))}</span>
-                <span className="av"><Avatar src={s.avatar_url} name={s.name} size={76} /><i className={s.kind}><Icon name={s.kind === 'pr' ? 'star' : s.kind === 'visits' ? 'flame' : 'user'} size={15} /></i></span>
-                <b>{s.name}</b>
-                <span className={`lbl ${s.kind}`}>{s.label}</span>
-              </div>
             ))}
           </div>
         </>

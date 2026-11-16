@@ -89,7 +89,6 @@ export function supabaseApi(url: string, key: string): Api {
     myComponentResults: (from, to) => rpc('my_component_results', { p_from: from, p_to: to }),
     liftHistory: (m) => rpc('lift_history', { p_movement: m }),
     myLifts: () => rpc('my_lifts'),
-    spotlight: () => rpc('spotlight', { p_days: 3 }),
     leaderboard: (w, k) => rpc('component_leaderboard', { p_workout: w, p_key: k }),
     subscribe(cb) {
       const ch = sb.channel('box800')

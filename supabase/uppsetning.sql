@@ -872,44 +872,6 @@ grant execute on function save_result(jsonb), delete_result(bigint), my_componen
 grant select on movements, results to authenticated;
 grant insert, update, delete on movements to authenticated;
 
--- Kastljós á heimasíðu: áfangar annarra síðustu daga (eins og „Spotlight“ í Wodify)
--- Nafn birtist sem fornafn + upphafsstafur (t.d. „Heiðdís B“).
-create or replace function spotlight(p_days int default 3)
-returns table (profile_id uuid, name text, avatar_url text, kind text, label text, at date)
-language sql stable security definer set search_path = public as $$
-  with att as (
-    select b.profile_id, (c.starts_at at time zone 'Atlantic/Reykjavik')::date d,
-           row_number() over (partition by b.profile_id order by c.starts_at) n
-    from bookings b join classes c on c.id = b.class_id
-    where b.status = 'booked' and b.checked_in_at is not null
-  ),
-  ev as (
-    select profile_id, 'visits' kind, n || ' tímar' label, d at from att
-    where d >= current_date - p_days and d <= current_date and (n in (10, 25, 50) or n % 100 = 0)
-    union all
-    select r.profile_id, 'pr', 'PR · ' || m.name || ' ' || replace(rtrim(rtrim(r.weight::text, '0'), '.'), '.', ',') || ' kg', r.day
-    from results r join movements m on m.id = r.movement_id
-    where r.day >= current_date - p_days and r.weight is not null
-      and exists (select 1 from results x where x.profile_id = r.profile_id and x.movement_id = r.movement_id and x.day < r.day
-                  and coalesce(x.reps, 1) = coalesce(r.reps, 1))
-      and r.weight > (select max(x.weight) from results x where x.profile_id = r.profile_id and x.movement_id = r.movement_id
-                      and coalesce(x.reps, 1) = coalesce(r.reps, 1) and (x.day < r.day or (x.day = r.day and x.id < r.id)))
-    union all
-    select f.profile_id, 'years', 'Iðkandi í ' || f.y || ' ár', (f.first + make_interval(years => f.y))::date
-    from (select profile_id, min(starts_on) first, extract(year from age(current_date, min(starts_on)))::int y
-          from memberships group by profile_id) f
-    where f.y >= 1 and (f.first + make_interval(years => f.y))::date between current_date - p_days and current_date
-  )
-  select ev.profile_id, split_part(p.full_name, ' ', 1) || coalesce(' ' || nullif(left(split_part(p.full_name, ' ', 2), 1), ''), ''),
-         p.avatar_url, ev.kind, ev.label, ev.at
-  from ev join profiles p on p.id = ev.profile_id
-  where me() is not null and p.role = 'member'
-  order by ev.at desc, ev.kind
-  limit 12
-$$;
-revoke execute on function spotlight(int) from public, anon;
-grant execute on function spotlight(int) to authenticated;
-
 do $$ begin
   alter publication supabase_realtime add table results;
 exception when others then null; end $$;
