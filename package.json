@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "node -e \"require('fs').mkdirSync('public/demo',{recursive:true});require('fs').copyFileSync('node_modules/@electric-sql/pglite/dist/postgres.data','public/demo/pgfs.wasm')\" && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },

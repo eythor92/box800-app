@@ -13,7 +13,9 @@ const USERS = [
 ]
 
 export async function demoApi(): Promise<Api> {
-  const db = new PGlite()
+  // Gagnapakki Postgres (sóttur sem .wasm svo allir hýsingaraðilar þjóni honum)
+  const fsBundle = await (await fetch(new URL('demo/pgfs.wasm', document.baseURI))).blob()
+  const db = new PGlite({ fsBundle })
   await db.exec(`
     create role anon; create role authenticated;
     create schema auth;
