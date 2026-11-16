@@ -93,7 +93,6 @@ export default function MobileShell() {
             </div>
             <Link to="/">Heim</Link>
             <Link to="/timatafla">Tímatafla</Link>
-            <a href="https://www.box800.is/verdskra.html" target="_blank" rel="noreferrer">Kaupa kort eða námskeið</a>
             {me.role !== 'member' && <Link to="/kiosk">Kiosk+</Link>}
             {me.role === 'owner' && <Link to="/stjorn">Stjórnborð</Link>}
             <button className="link" onClick={() => api.signOut()}>Skrá út</button>

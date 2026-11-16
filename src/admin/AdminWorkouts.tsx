@@ -68,20 +68,6 @@ export default function AdminWorkouts() {
     } catch (e) { toast(errMsg(e)) } finally { setSaving(false) }
   }
 
-  async function copyWeek() {
-    const src = (workouts ?? []).filter((x) => x.day >= week && x.day <= addDays(week, 6))
-    const have = new Set((workouts ?? []).map((x) => x.program_id + '|' + x.day))
-    let n = 0
-    try {
-      for (const s of src) {
-        const d = addDays(s.day, 7)
-        if (have.has(s.program_id + '|' + d)) continue
-        await api.saveWorkout({ ...s, id: undefined, day: d, status: 'draft' }); n++
-      }
-      refresh(); toast(`${n} æfingar afritaðar á næstu viku sem drög`)
-    } catch (e) { toast(errMsg(e)) }
-  }
-
   const status = dirty ? ['ÓVISTAÐAR BREYTINGAR', '#3b321f', '#f2c97a'] : !saved ? ['VANTAR', '#3a2424', '#f0b0b0'] : saved.status === 'published' ? ['BIRT', '#1f3b2c', '#8fe0b0'] : ['DRÖG', '#2a2e33', '#c3cad1']
   const p = programs?.find((x) => x.id === prog)
 
@@ -92,7 +78,6 @@ export default function AdminWorkouts() {
           <h1>Æfingar dagsins</h1>
           <div className="muted" style={{ fontSize: 14 }}>Aðeins eigandi skrifar og breytir æfingum. Þjálfarar og iðkendur sjá þær í appinu.</div>
         </div>
-        <button className="btn btn-outline" onClick={copyWeek}>Afrita viku á næstu viku</button>
       </div>
 
       <div className="row" style={{ gap: 26, marginTop: 22, borderBottom: '1px solid var(--line)' }}>
