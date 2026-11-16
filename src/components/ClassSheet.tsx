@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import type { ClassRow } from '../api'
 import { useApp, useData } from '../ctx'
 import { Avatar } from './Icon'
-import { dayKey, errMsg, hhmm, minutesBetween, whenText } from '../util'
+import { bookingOpensAt, dayKey, errMsg, hhmm, minutesBetween, whenText } from '../util'
 
 export function classState(c: ClassRow) {
   const past = new Date(c.starts_at) <= new Date()
@@ -25,7 +25,7 @@ export default function ClassSheet({ c, onClose }: { c: ClassRow; onClose: () =>
   const [busy, setBusy] = useState(false)
   const st = classState(c)
   const { data: settings } = useData((a) => a.settings())
-  const opensAt = settings ? new Date(+new Date(c.starts_at) - settings.open_minutes * 60000) : null
+  const opensAt = settings ? bookingOpensAt(c.starts_at, settings) : null
   const notOpen = !!opensAt && opensAt > new Date() && !c.my_status
   const title = `${c.program}: ${hhmm(c.starts_at)}`
 

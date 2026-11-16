@@ -19,6 +19,11 @@ export function mondayOf(key: string): string { return addDays(key, -weekdayIdx(
 export function today(): string { return dayKey(new Date()) }
 export function dayStart(key: string): Date { return new Date(key + 'T00:00:00Z') }
 
+/** Hvenær opna bókanir í tíma (sama regla og booking_opens_at í gagnagrunninum) */
+export function bookingOpensAt(startsAt: string, s: { open_mode: string; open_days: number; open_time: string; open_minutes: number }): Date {
+  if (s.open_mode === 'fixed') return new Date(addDays(dayKey(new Date(startsAt)), -s.open_days) + 'T' + s.open_time.slice(0, 5) + ':00Z')
+  return new Date(+new Date(startsAt) - s.open_minutes * 60000)
+}
 export function hhmm(iso: string): string {
   return new Intl.DateTimeFormat('is-IS', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: false }).format(new Date(iso))
 }

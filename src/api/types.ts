@@ -72,6 +72,9 @@ export interface Workout {
 }
 
 export interface Settings {
+  open_mode: 'fixed' | 'relative'
+  open_days: number
+  open_time: string
   open_minutes: number
   close_minutes: number
   cancel_minutes: number

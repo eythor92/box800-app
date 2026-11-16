@@ -89,9 +89,9 @@ export async function demoApi(): Promise<Api> {
     },
     settings: () => one<Settings>(`select * from settings where id = 1`),
     saveSettings: async (s) => {
-      await write(`update settings set open_minutes=$1, close_minutes=$2, cancel_minutes=$3, waitlist_on=$4, waitlist_mode=$5,
+      await write(`update settings set open_mode=$10, open_days=$11, open_time=$12, open_minutes=$1, close_minutes=$2, cancel_minutes=$3, waitlist_on=$4, waitlist_mode=$5,
         waitlist_limit=$6, auto_cancel_on=$7, auto_cancel_minutes=$8, auto_cancel_min=$9 where id = 1`,
-        [s.open_minutes, s.close_minutes, s.cancel_minutes, s.waitlist_on, s.waitlist_mode, s.waitlist_limit, s.auto_cancel_on, s.auto_cancel_minutes, s.auto_cancel_min])
+        [s.open_minutes, s.close_minutes, s.cancel_minutes, s.waitlist_on, s.waitlist_mode, s.waitlist_limit, s.auto_cancel_on, s.auto_cancel_minutes, s.auto_cancel_min, s.open_mode, s.open_days, s.open_time])
     },
     members: () => rows(`select * from member_overview()`),
     createMember: async (m) => {

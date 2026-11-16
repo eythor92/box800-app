@@ -114,7 +114,10 @@ create table if not exists workouts (
 -- Bókunarstillingar (ein lína)
 create table if not exists settings (
   id                  int primary key default 1 check (id = 1),
-  open_minutes        int not null default 1230,  -- bókanir opna X mín. fyrir tíma
+  open_mode           text not null default 'fixed' check (open_mode in ('fixed', 'relative')),
+  open_days           int not null default 1,     -- 'fixed': opna X dögum fyrir tímann …
+  open_time           time not null default '12:00', -- … á þessum tíma (t.d. kl. 12:00 daginn áður)
+  open_minutes        int not null default 1230,  -- 'relative': bókanir opna X mín. fyrir tíma
   close_minutes       int not null default 0,     -- bókanir loka X mín. fyrir tíma
   cancel_minutes      int not null default 30,    -- afbókun án refsingar til X mín. fyrir
   waitlist_on         boolean not null default true,
@@ -174,6 +177,15 @@ $$;
 create or replace function can_act_for(p uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select p = me() or is_staff() or exists (select 1 from profiles where id = p and guardian_id = me())
+$$;
+
+-- Hvenær opna bókanir í tímann?
+create or replace function booking_opens_at(c classes) returns timestamptz
+language sql stable security definer set search_path = public as $$
+  select case when s.open_mode = 'fixed'
+    then (((c.starts_at at time zone 'Atlantic/Reykjavik')::date - s.open_days) + s.open_time) at time zone 'Atlantic/Reykjavik'
+    else c.starts_at - make_interval(mins => s.open_minutes) end
+  from settings s where s.id = 1
 $$;
 
 create or replace function class_cap(c classes) returns int
@@ -261,7 +273,7 @@ begin
 
   if c.cancelled_at is not null then raise exception 'Tímanum hefur verið aflýst'; end if;
   if not staff then
-    if now() < c.starts_at - make_interval(mins => s.open_minutes) then
+    if now() < booking_opens_at(c) then
       raise exception 'Bókanir eru ekki opnar enn'; end if;
     if now() > c.starts_at - make_interval(mins => s.close_minutes) then
       raise exception 'Bókunum er lokað fyrir þennan tíma'; end if;
@@ -650,7 +662,7 @@ revoke execute on all functions in schema public from public, anon;
 grant execute on function book_class(bigint, uuid), cancel_booking(bigint, uuid), set_class_cap(bigint, int, text),
   cancel_class(bigint, boolean, text), set_class_coach(bigint, uuid), check_in(bigint, uuid, boolean), kiosk_sign_in(bigint, uuid),
   class_list(timestamptz, timestamptz), class_roster(bigint), my_attendance(uuid), member_overview(), me(), my_role(), is_staff(), is_owner(), can_act_for(uuid),
-  class_cap(classes), has_membership(uuid, int, date), class_label(classes) to authenticated;
+  class_cap(classes), booking_opens_at(classes), has_membership(uuid, int, date), class_label(classes) to authenticated;
 revoke execute on function promote_waitlist(bigint), generate_classes(int), auto_cancel_low(), notify(uuid, text, text, bigint) from authenticated;
 
 -- Rauntímauppfærslur (appið sér breytingar strax)

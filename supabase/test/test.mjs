@@ -107,6 +107,16 @@ ok((await q(`select role from profiles where auth_id = $1`, [members[4]]))[0].ro
 
 await as(U.eythor); const ov = await q(`select * from member_overview()`); ok(ov.length >= 8, 'member_overview: ' + ov.length + ' prófílar');
 await as(members[4]); ok((await q(`select * from member_overview()`)).length === 0, 'Iðkandi sér ekki iðkendalista');
+// Bókanir opna á föstum tíma (kl. 12:00 daginn áður)
+await as(U.eythor);
+const [oa] = await q(`select booking_opens_at(c) t, (c.starts_at at time zone 'Atlantic/Reykjavik')::date d from classes c where id = $1`, [far.id]);
+const exp = new Date(new Date(oa.d).getTime() - 86400000); exp.setUTCHours(12, 0, 0, 0);
+ok(new Date(oa.t).getTime() === exp.getTime(), 'Opnar kl. 12:00 daginn áður: ' + new Date(oa.t).toISOString());
+await q(`update settings set open_mode = 'relative', open_minutes = 60`);
+const [ob] = await q(`select booking_opens_at(c) t, c.starts_at s from classes c where id = $1`, [far.id]);
+ok(new Date(ob.s) - new Date(ob.t) === 3600000, 'Afstætt: 60 mín. fyrir tímann');
+await q(`update settings set open_mode = 'fixed'`);
+
 // Skor
 const [bs] = await q(`select id from movements where name = 'Back Squat'`);
 const [wk] = await q(`select id from workouts limit 1`);

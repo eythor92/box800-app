@@ -3,6 +3,7 @@ import type { Settings } from '../api'
 import { useApp, useData } from '../ctx'
 import { errMsg } from '../util'
 
+const TIMES = Array.from({ length: 48 }, (_, i) => `${String(Math.floor(i / 2)).padStart(2, '0')}:${i % 2 ? '30' : '00'}`)
 function t(m: number) { const x = ((m % 1440) + 1440) % 1440; return `${Math.floor(x / 60)}:${String(x % 60).padStart(2, '0')}` }
 
 export default function AdminSettings() {
@@ -12,8 +13,11 @@ export default function AdminSettings() {
   useEffect(() => { if (data) setS(data) }, [data])
   if (!s) return <div className="spinner" />
   const num = (k: keyof Settings) => (e: React.ChangeEvent<HTMLInputElement>) => setS({ ...s, [k]: Math.max(0, parseInt(e.target.value || '0', 10) || 0) })
-  const cls = 8 * 60 + 30, opens = cls - s.open_minutes
-  const openDay = opens < -1440 ? `${Math.ceil(-opens / 1440)} dögum áður` : opens < 0 ? 'daginn áður' : 'sama dag'
+  const cls = 8 * 60 + 30
+  const ot = (s.open_time ?? '12:00').slice(0, 5), [oh, om] = ot.split(':').map(Number)
+  const opens = s.open_mode === 'fixed' ? oh * 60 + om - s.open_days * 1440 : cls - s.open_minutes
+  const dayWord = (m: number) => (m < -1440 ? `${Math.ceil(-m / 1440)} dögum áður` : m < 0 ? 'daginn áður' : 'sama dag')
+  const openDay = dayWord(opens)
   const box: React.CSSProperties = { width: 96 }
 
   return (
@@ -24,8 +28,30 @@ export default function AdminSettings() {
         <div style={{ flex: '999 1 480px', display: 'flex', flexDirection: 'column', gap: 16 }}>
           <section className="a-card">
             <h2 style={{ margin: '0 0 12px', fontSize: 17 }}>Bókanir</h2>
-            <div className="row" style={{ flexWrap: 'wrap' }}><span style={{ minWidth: 170 }}>Bókanir opna</span><input className="input" style={box} type="number" min={0} value={s.open_minutes} onChange={num('open_minutes')} aria-label="Mínútur" /><span>mínútum fyrir tímann</span></div>
-            <div style={{ color: 'var(--accent)', fontSize: 14, margin: '6px 0 0 180px' }}>Fyrir tíma kl. 8:30 opna bókanir {openDay} kl. {t(opens)}.</div>
+            <div style={{ fontWeight: 700 }}>Hvenær opna bókanir?</div>
+            <label className="row" style={{ flexWrap: 'wrap', marginTop: 10, cursor: 'pointer' }}>
+              <input type="radio" name="om" checked={s.open_mode === 'fixed'} onChange={() => setS({ ...s, open_mode: 'fixed' })} style={{ width: 18, height: 18 }} />
+              <span>Opnast fyrir tímann kl.</span>
+              <select className="select" style={{ width: 110 }} value={ot} onChange={(e) => setS({ ...s, open_mode: 'fixed', open_time: e.target.value })} aria-label="Klukkan">
+                {TIMES.concat(TIMES.includes(ot) ? [] : [ot]).map((x) => <option key={x} value={x}>{x}</option>)}
+              </select>
+              <select className="select" style={{ width: 180 }} value={s.open_days} onChange={(e) => setS({ ...s, open_mode: 'fixed', open_days: Number(e.target.value) })} aria-label="Hvaða dag">
+                <option value={0}>sama dag</option>
+                <option value={1}>daginn áður</option>
+                {[2, 3, 4, 5, 6, 7].map((n) => <option key={n} value={n}>{n} dögum áður</option>)}
+              </select>
+            </label>
+            <label className="row" style={{ flexWrap: 'wrap', marginTop: 10, cursor: 'pointer' }}>
+              <input type="radio" name="om" checked={s.open_mode === 'relative'} onChange={() => setS({ ...s, open_mode: 'relative' })} style={{ width: 18, height: 18 }} />
+              <input className="input" style={box} type="number" min={0} value={s.open_minutes} onChange={(e) => setS({ ...s, open_mode: 'relative', open_minutes: Math.max(0, parseInt(e.target.value || '0', 10) || 0) })} aria-label="Mínútur" />
+              <span className="muted">Eða: mínútum fyrir hvern tíma</span>
+            </label>
+            <div style={{ color: 'var(--accent)', fontSize: 14, margin: '8px 0 4px 28px' }}>
+              {s.open_mode === 'fixed'
+                ? `Allir tímar opna ${s.open_days === 0 ? 'sama dag' : s.open_days === 1 ? 'daginn áður' : s.open_days + ' dögum áður'} kl. ${t(oh * 60 + om)}, sama hvenær dags þeir eru.`
+                : `Fyrir tíma kl. 8:30 opna bókanir ${openDay} kl. ${t(opens)}.`}
+            </div>
+            <div style={{ borderTop: '1px solid var(--line)', marginTop: 12 }} />
             <div className="row" style={{ flexWrap: 'wrap', marginTop: 14 }}><span style={{ minWidth: 170 }}>Bókanir loka</span><input className="input" style={box} type="number" min={0} value={s.close_minutes} onChange={num('close_minutes')} aria-label="Mínútur" /><span>mínútum fyrir tímann</span></div>
             <div className="row" style={{ flexWrap: 'wrap', marginTop: 14 }}><span style={{ minWidth: 170 }}>Afbókun án refsingar til</span><input className="input" style={box} type="number" min={0} value={s.cancel_minutes} onChange={num('cancel_minutes')} aria-label="Mínútur" /><span>mínútum fyrir tímann</span></div>
           </section>
@@ -63,7 +89,7 @@ export default function AdminSettings() {
         <aside className="a-card" style={{ flex: '1 1 260px', maxWidth: 340 }}>
           <div className="label">Dæmi: tími kl. 8:30</div>
           {[
-            [(opens < 0 ? 'Daginn áður ' : '') + t(opens), 'Bókanir opna'],
+            [(opens < -1440 ? Math.ceil(-opens / 1440) + ' dögum áður ' : opens < 0 ? 'Daginn áður ' : '') + t(opens), 'Bókanir opna'],
             ['Kvöldið áður 20:00', 'Æfingin birtist í appinu'],
             [t(cls - s.cancel_minutes), s.waitlist_on && s.waitlist_mode === 'auto' ? 'Síðasti séns að afbóka. Biðlisti hættir að færast sjálfkrafa inn.' : 'Síðasti séns að afbóka án refsingar'],
             [t(cls - s.close_minutes), (s.close_minutes ? 'Bókanir loka' : 'Bókanir loka þegar tíminn byrjar') + (s.auto_cancel_on ? `. Aflýst ef færri en ${s.auto_cancel_min} eru skráðir.` : '')],
