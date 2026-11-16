@@ -6,6 +6,7 @@ import seedSql from '../../supabase/migrations/002_seed.sql?raw'
 import resultsSql from '../../supabase/migrations/005_results.sql?raw'
 import profileSql from '../../supabase/migrations/007_profile.sql?raw'
 import dropinSql from '../../supabase/migrations/008_mynd_dropin.sql?raw'
+import accessSql from '../../supabase/migrations/009_adgangur.sql?raw'
 import demoSql from '../../supabase/demo/demo_seed.sql?raw'
 import type { Api, Profile, Settings, Workout } from './types'
 
@@ -13,6 +14,7 @@ const USERS = [
   { label: 'Eyþór (eigandi)', email: 'eigandi@box800.demo', id: '00000000-0000-0000-0000-000000000001' },
   { label: 'Alda (þjálfari)', email: 'alda@box800.demo', id: '00000000-0000-0000-0000-000000000002' },
   { label: 'Sigrún (iðkandi)', email: 'idkandi@box800.demo', id: '00000000-0000-0000-0000-000000000003' },
+  { label: 'Nýr (án áskriftar)', email: 'nyr@box800.demo', id: '00000000-0000-0000-0000-000000000004' },
 ]
 
 export async function demoApi(): Promise<Api> {
@@ -30,6 +32,7 @@ export async function demoApi(): Promise<Api> {
   await db.exec(resultsSql)
   await db.exec(profileSql)
   await db.exec(dropinSql)
+  await db.exec(accessSql)
   await db.exec(demoSql)
 
   let current: string | null = sessionStorageGet()
@@ -133,6 +136,7 @@ export async function demoApi(): Promise<Api> {
     },
     staffAdd: (c, p, w) => val(`select staff_add($1, $2, $3)`, [c, p, w]),
     createDropin: (n, e, ph) => val(`select create_dropin($1, $2, $3)`, [n, e ?? null, ph ?? null]),
+    hasAccess: () => one<{ a: boolean }>(`select has_access() a`).then((r) => !!r?.a),
     leaderboard: (w, k) => rows(`select * from component_leaderboard($1, $2)`, [w, k]).then(numify),
     subscribe(cb) { listeners.add(cb); return () => listeners.delete(cb) },
   }

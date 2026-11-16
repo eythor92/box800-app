@@ -20,6 +20,7 @@ await db.exec(fs.readFileSync(new URL('002_seed.sql', dir), 'utf8'));
 try { await db.exec(fs.readFileSync(new URL('005_results.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 005:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('007_profile.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 007:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('008_mynd_dropin.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 008:', e.message, e.position); process.exit(1); }
+try { await db.exec(fs.readFileSync(new URL('009_adgangur.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 009:', e.message, e.position); process.exit(1); }
 console.log('Uppsetning tókst');
 
 // Notendur
@@ -176,6 +177,16 @@ ok(!!di.id, 'Þjálfari stofnar drop-in gest án netfangs');
 ok((await q(`select staff_add($1, $2, true) s`, [wl.id, di.id]))[0].s === 'waitlist', 'Drop-in fer á biðlista');
 ok((await q(`select staff_add($1, $2, false) s`, [wl.id, await pid(members[1])]))[0].s === 'booked', 'Þjálfari bætir beint í tímann');
 await as(members[2]); await expectErr(() => q(`select create_dropin('X')`), 'Aðeins þjálfarar', 'Iðkandi getur ekki stofnað drop-in');
+
+// Aðgangur: án áskriftar sést ekkert
+const noSub = '10000000-0000-0000-0000-000000000099';
+await q(`insert into auth.users (id, email) values ($1, 'ny@test.is')`, [noSub]);
+await as(noSub);
+ok((await q(`select has_access() a`))[0].a === false, 'Án áskriftar: enginn aðgangur');
+ok((await q(`select * from class_list(now() - interval '1 day', now() + interval '3 days')`)).length === 0, 'Án áskriftar: tímataflan er tóm');
+ok((await q(`select * from class_attendees($1)`, [wl.id])).length === 0, 'Án áskriftar: sést ekki hverjir eru skráðir');
+await as(members[1]);
+ok((await q(`select has_access() a`))[0].a === true && (await q(`select * from class_list(now() - interval '1 day', now() + interval '3 days')`)).length > 0, 'Með áskrift: sér tímatöflu');
 
 // Skor
 const [bs] = await q(`select id from movements where name = 'Back Squat'`);

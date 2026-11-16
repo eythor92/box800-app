@@ -109,6 +109,7 @@ export function supabaseApi(url: string, key: string): Api {
     },
     staffAdd: (c, p, w) => rpc('staff_add', { p_class: c, p_profile: p, p_waitlist: w }),
     createDropin: (name, email, phone) => rpc('create_dropin', { p_name: name, p_email: email ?? null, p_phone: phone ?? null }),
+    hasAccess: () => rpc('has_access'),
     leaderboard: (w, k) => rpc('component_leaderboard', { p_workout: w, p_key: k }),
     subscribe(cb) {
       const ch = sb.channel('box800')

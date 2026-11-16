@@ -8,6 +8,8 @@ interface Ctx {
   refresh: () => void
   toast: (msg: string) => void
   reloadMe?: () => void
+  /** false = engin virk áskrift: sér aðeins forsíðu og prófíl */
+  access?: boolean
 }
 export const AppCtx = createContext<Ctx>(null as never)
 export const useApp = () => useContext(AppCtx)

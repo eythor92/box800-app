@@ -165,6 +165,8 @@ export interface Api {
   demoUsers?(): { label: string; email: string }[]
   // gögn
   myProfile(): Promise<Profile | null>
+  /** Má innskráður notandi sjá tímatöflu og æfingar? (þjálfari eða virk áskrift) */
+  hasAccess(): Promise<boolean>
   classList(from: Date, to: Date): Promise<ClassRow[]>
   book(classId: number, profileId?: string): Promise<string>
   cancelBooking(classId: number, profileId?: string): Promise<string>

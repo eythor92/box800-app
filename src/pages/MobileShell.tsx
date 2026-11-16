@@ -3,11 +3,12 @@ import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-do
 import { useApp, useData } from '../ctx'
 import { Icon, Avatar } from '../components/Icon'
 import { relDay, shortTime } from '../util'
+import { BUY_URL } from './NoAccess'
 
 const TITLES: Record<string, string> = { '/timatafla': 'Tímatafla', '/aefing': 'Æfing', '/maeting': 'Mæting', '/thjalfari': 'Tímar', '/thjalfari/aefing': 'Æfing' }
 
 export default function MobileShell() {
-  const { api, me, refresh } = useApp()
+  const { api, me, refresh, access } = useApp()
   const loc = useLocation()
   const nav = useNavigate()
   const [bell, setBell] = useState(false)
@@ -26,6 +27,7 @@ export default function MobileShell() {
 
   const tabs = coachMode
     ? [['/thjalfari', 'Tímar', 'check'], ['/thjalfari/aefing', 'Æfing', 'dumb']]
+    : access === false ? [['/', 'Heim', 'home'], ['/profill', 'Prófíll', 'user']]
     : [['/', 'Heim', 'home'], ['/timatafla', 'Tímatafla', 'cal'], ['/aefing', 'Æfing', 'dumb'], ['/maeting', 'Mæting', 'check']]
 
   return (
@@ -92,9 +94,10 @@ export default function MobileShell() {
               <div><div style={{ fontWeight: 700 }}>{me.full_name || 'Án nafns'}</div><div className="muted" style={{ fontSize: 13 }}>{me.email}</div></div>
             </Link>
             <Link to="/">Heim</Link>
-            <Link to="/timatafla">Tímatafla</Link>
-            <Link to="/arangur">Árangur</Link>
+            {access !== false && <Link to="/timatafla">Tímatafla</Link>}
+            {access !== false && <Link to="/arangur">Árangur</Link>}
             <Link to="/profill">Prófíllinn minn</Link>
+            <a href={BUY_URL} target="_blank" rel="noreferrer">Kaupa kort eða áskrift</a>
             {me.role !== 'member' && <Link to="/kiosk">Kiosk+</Link>}
             {me.role === 'owner' && <Link to="/stjorn">Stjórnborð</Link>}
             <button className="link" onClick={() => api.signOut()}>Skrá út</button>

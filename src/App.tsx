@@ -19,19 +19,23 @@ import AdminMemberProfile from './admin/AdminMemberProfile'
 import KioskPlus from './kiosk/KioskPlus'
 import Results from './pages/Results'
 import MyProfile from './pages/MyProfile'
+import NoAccess from './pages/NoAccess'
 import LiftHistory from './pages/LiftHistory'
 import Leaderboard from './pages/Leaderboard'
 
 export default function App() {
   const [api, setApi] = useState<Api | null>(null)
   const [me, setMe] = useState<Profile | null | undefined>(undefined)
+  const [access, setAccess] = useState(true)
   const [tick, setTick] = useState(0)
   const [fatal, setFatal] = useState<string | null>(null)
   const { msg, toast } = useToast()
 
   const loadMe = useCallback(async (a: Api) => {
     const s = await a.session()
-    setMe(s ? await a.myProfile() : null)
+    const p = s ? await a.myProfile() : null
+    if (p) setAccess(await a.hasAccess().catch(() => true))
+    setMe(p)
   }, [])
 
   useEffect(() => {
@@ -49,6 +53,13 @@ export default function App() {
     return api.subscribe(() => setTick((t) => t + 1))
   }, [api, me])
 
+  // Án áskriftar: athuga reglulega hvort áskrift sé komin inn
+  useEffect(() => {
+    if (!api || !me || access) return
+    const t = setInterval(() => { api.hasAccess().then((x) => { if (x) loadMe(api) }, () => undefined) }, 60000)
+    return () => clearInterval(t)
+  }, [api, me, access, loadMe])
+
   if (fatal) return <div className="auth"><div className="error">Villa: {fatal}</div></div>
   if (!api || me === undefined) return <div className="auth"><div><img src="myndir/logo-white.png" alt="BOX800" style={{ height: 60, display: 'block', margin: '0 auto' }} /><div className="spinner" /></div></div>
   if (!me) return <>{<Login api={api} />}{msg && <div className="toast" role="status">{msg}</div>}</>
@@ -57,9 +68,16 @@ export default function App() {
   const owner = me.role === 'owner'
 
   return (
-    <AppCtx.Provider value={{ api, me, tick, refresh: () => setTick((t) => t + 1), toast, reloadMe: () => { loadMe(api) } }}>
+    <AppCtx.Provider value={{ api, me, tick, refresh: () => setTick((t) => t + 1), toast, reloadMe: () => { loadMe(api) }, access }}>
       <HashRouter>
         <Routes>
+          {!access ? (
+            <Route element={<MobileShell />}>
+              <Route path="/" element={<NoAccess />} />
+              <Route path="/profill" element={<MyProfile />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          ) : (
           <Route element={<MobileShell />}>
             <Route path="/" element={<Home />} />
             <Route path="/timatafla" element={<Schedule />} />
@@ -73,6 +91,7 @@ export default function App() {
             {staff && <Route path="/thjalfari/aefing" element={<WorkoutView coach />} />}
             {staff && <Route path="/thjalfari/timi/:id" element={<CoachClass />} />}
           </Route>
+          )}
           {staff && <Route path="/kiosk" element={<KioskPlus />} />}
           {staff && <Route path="/kiosk/sjonvarp" element={<Navigate to="/kiosk?t=aefing" replace />} />}
           {owner && (

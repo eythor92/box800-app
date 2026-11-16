@@ -443,3 +443,4 @@ a { color: var(--accent); }
 /* Prófílmynd sem má skipta um */
 .av-up { position: relative; border-radius: 99px; padding: 0; flex-shrink: 0; }
 .av-up .av-cam { position: absolute; right: 2px; bottom: 2px; width: 34px; height: 34px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); display: flex; align-items: center; justify-content: center; border: 3px solid var(--card); }
+a.btn { text-decoration: none; }

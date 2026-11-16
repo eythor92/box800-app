@@ -112,3 +112,7 @@ join (values (1, 6040, 'Rx'), (2, 5120, 'Rx'), (3, 6010, 'Scaled'), (4, 5120, 'R
      workouts w join programs p on p.id = w.program_id
 where p.name = 'Hreysti' and w.day = current_date;
 
+
+-- Nýr iðkandi sem hefur stofnað aðgang en er ekki kominn með áskrift (sér aðeins forsíðu)
+insert into auth.users (id, email) values ('00000000-0000-0000-0000-000000000004', 'nyr@box800.demo');
+update profiles set full_name = 'Nýr Iðkandi' where email = 'nyr@box800.demo';
