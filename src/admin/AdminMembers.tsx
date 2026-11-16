@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import type { MemberRow } from '../api'
 import { useApp, useData } from '../ctx'
-import { Icon } from '../components/Icon'
-import { dayKey, dayLabel, errMsg, initials, relDay, today, addDays } from '../util'
+import { Avatar, Icon } from '../components/Icon'
+import { dayKey, dayLabel, errMsg, relDay, today, addDays } from '../util'
 
-type Tab = 'active' | 'new' | 'expiring' | 'inactive' | 'all'
+type Tab = 'active' | 'new' | 'expiring' | 'inactive' | 'suspended' | 'staff' | 'all'
 
 function statusOf(m: MemberRow): Tab {
+  if (m.status === 'suspended') return 'suspended'
+  if (m.status === 'inactive') return 'inactive'
   const t = today()
   const ends = m.ends_on?.slice(0, 10) ?? null
   const active = m.membership_status === 'active' && (!ends || ends >= t)
@@ -21,14 +24,14 @@ export default function AdminMembers() {
   const { data, error } = useData((a) => a.members())
   const [tab, setTab] = useState<Tab>('active')
   const [q, setQ] = useState('')
-  const [openId, setOpenId] = useState<string | null>(null)
+  const nav = useNavigate()
   const [nw, setNw] = useState<null | { first: string; last: string; email: string; phone: string; kt: string; note: string; emergency: string; child: boolean }>(null)
 
-  const rows = useMemo(() => (data ?? []).filter((m) => m.role === 'member').map((m) => ({ ...m, st: statusOf(m) })), [data])
-  const inTab = (st: Tab, t: Tab) => t === 'all' || (t === 'active' ? st !== 'inactive' : st === t)
-  const shown = rows.filter((m) => inTab(m.st, tab) && (!q || `${m.full_name} ${m.email} ${m.phone}`.toLowerCase().includes(q.toLowerCase())))
-  const tabs: [Tab, string][] = [['active', 'Virkir'], ['new', 'Nýir'], ['expiring', 'Áskrift að renna út'], ['inactive', 'Óvirkir'], ['all', 'Allir']]
-  const flag: Record<string, [string, string, string]> = { new: ['NÝR', '#1f3b2c', '#8fe0b0'], expiring: ['RENNUR ÚT', '#3b321f', '#f2c97a'], inactive: ['ÓVIRKUR', '#2a2e33', '#9aa3ad'] }
+  const rows = useMemo(() => (data ?? []).map((m) => ({ ...m, st: statusOf(m) })), [data])
+  const inTab = (st: Tab, t: Tab, role?: string) => t === 'all' || (t === 'staff' ? role !== 'member' : t === 'active' ? st !== 'inactive' && st !== 'suspended' : st === t)
+  const shown = rows.filter((m) => inTab(m.st, tab, m.role) && (!q || `${m.full_name} ${m.email} ${m.phone}`.toLowerCase().includes(q.toLowerCase())))
+  const tabs: [Tab, string][] = [['active', 'Virkir'], ['new', 'Nýir'], ['expiring', 'Áskrift að renna út'], ['staff', 'Starfsfólk'], ['suspended', 'Í bið'], ['inactive', 'Óvirkir'], ['all', 'Allir']]
+  const flag: Record<string, [string, string, string]> = { new: ['NÝR', '#1f3b2c', '#8fe0b0'], expiring: ['RENNUR ÚT', '#3b321f', '#f2c97a'], inactive: ['ÓVIRKUR', '#2a2e33', '#9aa3ad'], suspended: ['Í BIÐ', '#3b321f', '#f2c97a'] }
   const cols = 'minmax(0,2fr) minmax(0,1.5fr) minmax(0,1fr) minmax(0,1fr) 100px 44px'
 
   const kt = (nw?.kt ?? '').replace(/\D/g, '')
@@ -48,7 +51,7 @@ export default function AdminMembers() {
         <button className="btn btn-primary" onClick={() => setNw({ first: '', last: '', email: '', phone: '', kt: '', note: '', emergency: '', child: false })}>+ Nýr iðkandi</button>
       </div>
       <div className="row" style={{ flexWrap: 'wrap', marginTop: 20 }}>
-        {tabs.map(([t, l]) => <button key={t} className={`chip${tab === t ? ' on' : ''}`} onClick={() => setTab(t)}>{l} <span style={{ opacity: .75 }}>{rows.filter((m) => inTab(m.st, t)).length}</span></button>)}
+        {tabs.map(([t, l]) => <button key={t} className={`chip${tab === t ? ' on' : ''}`} onClick={() => setTab(t)}>{l} <span style={{ opacity: .75 }}>{rows.filter((m) => inTab(m.st, t, m.role)).length}</span></button>)}
       </div>
       <div className="row" style={{ marginTop: 14, maxWidth: 520 }}>
         <Icon name="search" color="var(--muted)" />
@@ -60,32 +63,25 @@ export default function AdminMembers() {
           <div className="thead" style={{ gridTemplateColumns: cols }}><div>NAFN</div><div>ÁSKRIFT</div><div>GILDIR TIL</div><div>SÍÐAST MÆTT</div><div>30 DAGAR</div><div /></div>
           {!data && !error && <div className="spinner" />}
           {shown.map((m) => {
-            const f = flag[m.st], open = openId === m.id
+            const f = flag[m.st]
             return (
-              <div key={m.id} style={{ borderTop: '1px solid var(--line)' }}>
-                <div className="tr" style={{ gridTemplateColumns: cols, borderTop: 0 }}>
-                  <div className="row" style={{ minWidth: 0 }}>
-                    <span className="avatar" style={{ width: 40, height: 40, boxShadow: f ? `0 0 0 2px ${f[2]}` : undefined }}>{initials(m.full_name)}</span>
-                    <div style={{ minWidth: 0 }}>
-                      <div className="ellipsis" style={{ color: 'var(--accent)', fontWeight: 600 }}>{m.full_name || m.email}</div>
+              <button key={m.id} className="tr mrow" style={{ gridTemplateColumns: cols, width: '100%', textAlign: 'left' }} onClick={() => nav('/stjorn/idkendur/' + m.id)}>
+                <div className="row" style={{ minWidth: 0 }}>
+                  <Avatar src={m.avatar_url} name={m.full_name || '?'} size={40} ring={f ? f[2] : undefined} />
+                  <div style={{ minWidth: 0 }}>
+                    <div className="ellipsis" style={{ color: 'var(--accent)', fontWeight: 600 }}>{m.full_name || m.email}</div>
+                    <div className="row" style={{ gap: 4 }}>
+                      {m.role !== 'member' && <span className="badge badge-accent">{m.role === 'owner' ? 'STJÓRNANDI' : 'ÞJÁLFARI'}</span>}
                       {f && <span className="badge" style={{ background: f[1], color: f[2] }}>{f[0]}</span>}
                     </div>
                   </div>
-                  <div>{m.plan ?? '—'}</div>
-                  <div style={{ color: m.st === 'expiring' ? 'var(--warn)' : undefined }}>{m.ends_on ? dayLabel(m.ends_on) : m.plan ? 'Endurnýjast' : '—'}</div>
-                  <div style={{ color: '#c3cad1' }}>{m.last_class ? relDay(m.last_class) : '—'}</div>
-                  <div style={{ fontWeight: 700 }}>{m.visits_30}</div>
-                  <button className="icon-btn" aria-expanded={open} aria-label={'Nánar um ' + m.full_name} onClick={() => setOpenId(open ? null : m.id)}><Icon name="down" style={{ transform: open ? 'rotate(180deg)' : 'none' }} /></button>
                 </div>
-                {open && (
-                  <div className="row" style={{ flexWrap: 'wrap', gap: 24, padding: '4px 16px 16px 68px', fontSize: 14, alignItems: 'flex-start' }}>
-                    <div><div className="label">Netfang</div>{m.email ?? '—'}</div>
-                    <div><div className="label">Sími</div>{m.phone ?? '—'}</div>
-                    <div><div className="label">Tímar samtals</div>{m.total}</div>
-                    {m.note && <div><div className="label">Athugasemd</div>{m.note}</div>}
-                  </div>
-                )}
-              </div>
+                <div>{m.plan ?? '—'}</div>
+                <div style={{ color: m.st === 'expiring' ? 'var(--warn)' : undefined }}>{m.ends_on ? dayLabel(m.ends_on) : m.plan ? 'Endurnýjast' : '—'}</div>
+                <div style={{ color: '#c3cad1' }}>{m.last_class ? relDay(m.last_class) : '—'}</div>
+                <div style={{ fontWeight: 700 }}>{m.visits_30}</div>
+                <Icon name="next" size={18} color="var(--muted)" />
+              </button>
             )
           })}
           {data && shown.length === 0 && <div className="tr muted">Enginn iðkandi passar við leitina.</div>}

@@ -4,6 +4,7 @@ import { PGlite } from '@electric-sql/pglite'
 import initSql from '../../supabase/migrations/001_init.sql?raw'
 import seedSql from '../../supabase/migrations/002_seed.sql?raw'
 import resultsSql from '../../supabase/migrations/005_results.sql?raw'
+import profileSql from '../../supabase/migrations/007_profile.sql?raw'
 import demoSql from '../../supabase/demo/demo_seed.sql?raw'
 import type { Api, Profile, Settings, Workout } from './types'
 
@@ -26,6 +27,7 @@ export async function demoApi(): Promise<Api> {
   await db.exec(initSql)
   await db.exec(seedSql)
   await db.exec(resultsSql)
+  await db.exec(profileSql)
   await db.exec(demoSql)
 
   let current: string | null = sessionStorageGet()
@@ -111,6 +113,16 @@ export async function demoApi(): Promise<Api> {
     myComponentResults: (f, t) => rows(`select *, to_char(day, 'YYYY-MM-DD') as day from my_component_results($1, $2)`, [f, t]).then(numify),
     liftHistory: (m) => rows(`select *, to_char(day, 'YYYY-MM-DD') as day from lift_history($1)`, [m]).then(numify),
     myLifts: () => rows(`select *, to_char(last_day, 'YYYY-MM-DD') as last_day from my_lifts()`).then(numify),
+    getProfile: (id) => one<Profile>(`select *, to_char(birth_date, 'YYYY-MM-DD') as birth_date, to_char(member_since, 'YYYY-MM-DD') as member_since from profiles where id = $1`, [id]),
+    updateProfile: async (id, patch) => {
+      const keys = Object.keys(patch).filter((k) => /^[a-z_]+$/.test(k))
+      if (!keys.length) return
+      await write(`update profiles set ${keys.map((k, i) => `${k} = $${i + 2}`).join(', ')} where id = $1`, [id, ...keys.map((k) => (patch as Record<string, unknown>)[k] ?? null)])
+    },
+    deleteProfile: async (id) => { await write(`delete from profiles where id = $1`, [id]) },
+    membershipsOf: (id) => rows(`select id, plan, to_char(starts_on, 'YYYY-MM-DD') starts_on, to_char(ends_on, 'YYYY-MM-DD') ends_on, status, source from memberships where profile_id = $1 order by starts_on desc`, [id]),
+    attendanceOf: (id) => rows(`select * from my_attendance($1)`, [id]),
+    liftsOf: (id) => rows(`select *, to_char(last_day, 'YYYY-MM-DD') as last_day from my_lifts($1)`, [id]).then(numify),
     leaderboard: (w, k) => rows(`select * from component_leaderboard($1, $2)`, [w, k]).then(numify),
     subscribe(cb) { listeners.add(cb); return () => listeners.delete(cb) },
   }

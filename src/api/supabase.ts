@@ -91,6 +91,12 @@ export function supabaseApi(url: string, key: string): Api {
     myComponentResults: (from, to) => rpc('my_component_results', { p_from: from, p_to: to }),
     liftHistory: (m) => rpc('lift_history', { p_movement: m }),
     myLifts: () => rpc('my_lifts'),
+    async getProfile(id) { return must(await sb.from('profiles').select('*').eq('id', id).single()) },
+    async updateProfile(id, patch) { must(await sb.from('profiles').update(patch).eq('id', id)) },
+    async deleteProfile(id) { must(await sb.from('profiles').delete().eq('id', id)) },
+    async membershipsOf(id) { return must(await sb.from('memberships').select('*').eq('profile_id', id).order('starts_on', { ascending: false })) },
+    attendanceOf: (id) => rpc('my_attendance', { p_profile: id }),
+    liftsOf: (id) => rpc('my_lifts', { p_profile: id }),
     leaderboard: (w, k) => rpc('component_leaderboard', { p_workout: w, p_key: k }),
     subscribe(cb) {
       const ch = sb.channel('box800')

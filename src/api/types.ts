@@ -8,7 +8,18 @@ export interface Profile {
   role: Role
   avatar_url: string | null
   note?: string | null
+  kennitala?: string | null
+  address?: string | null
+  birth_date?: string | null
+  gender?: 'kona' | 'karl' | 'annað' | null
+  member_since?: string | null
+  emergency?: string | null
+  emergency_phone?: string | null
+  status?: 'active' | 'suspended' | 'inactive'
+  is_dependent?: boolean
+  created_at?: string
 }
+export interface Membership { id: number; plan: string; starts_on: string; ends_on: string | null; status: string; source: string }
 
 export interface ClassRow {
   id: number
@@ -102,6 +113,9 @@ export interface MemberRow {
   visits_30: number
   total: number
   note: string | null
+  avatar_url?: string | null
+  status?: 'active' | 'suspended' | 'inactive'
+  member_since?: string | null
 }
 
 export interface Notification { id: number; title: string; body: string | null; created_at: string; read_at: string | null }
@@ -186,4 +200,11 @@ export interface Api {
   liftHistory(movementId: number): Promise<Result[]>
   myLifts(): Promise<LiftSummary[]>
   leaderboard(workoutId: number, key: string): Promise<LeaderRow[]>
+  // prófíll iðkanda (eigandi)
+  getProfile(id: string): Promise<Profile>
+  updateProfile(id: string, patch: Partial<Profile>): Promise<void>
+  deleteProfile(id: string): Promise<void>
+  membershipsOf(id: string): Promise<Membership[]>
+  attendanceOf(id: string): Promise<Attendance[]>
+  liftsOf(id: string): Promise<LiftSummary[]>
 }

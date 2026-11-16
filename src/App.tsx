@@ -15,6 +15,7 @@ import AdminWorkouts from './admin/AdminWorkouts'
 import AdminClasses from './admin/AdminClasses'
 import AdminSettings from './admin/AdminSettings'
 import AdminMembers from './admin/AdminMembers'
+import AdminMemberProfile from './admin/AdminMemberProfile'
 import KioskPlus from './kiosk/KioskPlus'
 import Results from './pages/Results'
 import LiftHistory from './pages/LiftHistory'
@@ -79,6 +80,7 @@ export default function App() {
               <Route path="timar" element={<AdminClasses />} />
               <Route path="stillingar" element={<AdminSettings />} />
               <Route path="idkendur" element={<AdminMembers />} />
+              <Route path="idkendur/:id" element={<AdminMemberProfile />} />
             </Route>
           )}
           <Route path="*" element={<Navigate to="/" replace />} />

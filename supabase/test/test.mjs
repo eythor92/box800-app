@@ -18,6 +18,7 @@ await db.exec(`
 try { await db.exec(fs.readFileSync(new URL('001_init.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 001:', e.message, e.position); process.exit(1); }
 await db.exec(fs.readFileSync(new URL('002_seed.sql', dir), 'utf8'));
 try { await db.exec(fs.readFileSync(new URL('005_results.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 005:', e.message, e.position); process.exit(1); }
+try { await db.exec(fs.readFileSync(new URL('007_profile.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 007:', e.message, e.position); process.exit(1); }
 console.log('Uppsetning tókst');
 
 // Notendur
@@ -152,6 +153,18 @@ ok((await q(`select * from class_attendees($1)`, [late.id])).length >= 1, 'Iðka
 await q(`select self_check_in($1)`, [late.id]);
 ok((await q(`select checked_in from class_attendees($1) where is_me`, [late.id]))[0].checked_in === true, 'Iðkandi skráði sig sjálf(ur) inn');
 await expectErr(() => q(`select self_check_in($1)`, [far.id]), '30 mín', 'Ekki hægt að skrá sig inn löngu fyrir tímann');
+
+// Prófíll: hlutverk og staða
+await as(U.eythor);
+const p5 = await pid(members[5]);
+await q(`update profiles set role = 'coach', address = 'Eyravegur 1', gender = 'kona' where id = $1`, [p5]);
+ok((await q(`select role from profiles where id = $1`, [p5]))[0].role === 'coach', 'Eigandi gerir iðkanda að þjálfara');
+await expectErr(() => q(`update profiles set role = 'member' where auth_id = $1`, [U.eythor]), 'eigandahlutverkið', 'Eigandi getur ekki tekið eigandahlutverk af sjálfum sér');
+await q(`update profiles set status = 'suspended' where auth_id = $1`, [members[4]]);
+await as(members[4]); await expectErr(() => q(`select book_class($1)`, [w20.id]), 'ekki virkur', 'Iðkandi í bið getur ekki bókað');
+await q(`update profiles set status = 'active' where auth_id = $1`, [members[4]]);
+ok((await q(`select status from profiles where auth_id = $1`, [members[4]]))[0].status === 'suspended', 'Iðkandi getur ekki virkjað sig sjálfur');
+await as(U.eythor); await q(`update profiles set status = 'active' where auth_id = $1`, [members[4]]);
 
 // Skor
 const [bs] = await q(`select id from movements where name = 'Back Squat'`);
