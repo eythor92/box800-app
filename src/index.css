@@ -325,3 +325,29 @@ a { color: var(--accent); }
   .cb-main { grid-template-columns: 1fr; overflow-y: auto; }
   .kp-zoom input[type=range], .kp-zoom .pct { display: none; }
 }
+
+/* Stillingar glugga (Kiosk+) */
+.kp-panel { position: relative; }
+.kp-prog { display: inline-flex; align-items: center; gap: 7px; }
+.ks-back { position: absolute; inset: 0; z-index: 30; background: rgba(0,0,0,.45); }
+.ks { position: absolute; z-index: 31; top: 60px; left: 12px; width: min(440px, calc(100% - 24px)); max-height: calc(100% - 72px); overflow-y: auto; background: var(--card-2); border: 1px solid var(--line-2); border-radius: 6px; padding: 16px; box-shadow: 0 20px 50px rgba(0,0,0,.6); }
+.ks-sec { border: 1px solid var(--line-2); border-radius: var(--r); margin-bottom: 10px; background: var(--bg); }
+.ks-sec.open { border-color: var(--accent); }
+.ks-sec-h { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px; text-align: left; }
+.ks-lbl { font-size: 11.5px; font-weight: 800; letter-spacing: 1.5px; color: var(--muted); flex-shrink: 0; }
+.ks-val { font-weight: 700; font-size: 16px; }
+.ks-val small { display: block; font-weight: 500; font-size: 13px; color: var(--muted); }
+.ks-sec-b { padding: 4px 14px 14px; border-top: 1px solid var(--line); }
+.ks-btns { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
+.ks-btns button { min-height: 46px; padding: 6px 10px; border: 1.5px solid var(--accent); border-radius: var(--r); color: var(--text); font-weight: 700; text-align: center; }
+.ks-btns button.on { background: var(--accent); color: var(--accent-ink); }
+.ks-auto { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-weight: 600; cursor: pointer; }
+.ks-auto input { width: 20px; height: 20px; accent-color: var(--accent); }
+.ks-cal { margin-top: 10px; background: var(--card); border-radius: var(--r); padding: 10px; }
+.ks-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; margin-top: 8px; text-align: center; }
+.ks-grid .wd { font-size: 12px; font-weight: 800; color: var(--muted); padding: 4px 0; }
+.ks-grid button { height: 40px; border-radius: var(--r); font-weight: 600; text-align: center; }
+.ks-grid button.out { color: #5d666f; }
+.ks-grid button.today { box-shadow: inset 0 0 0 1px var(--line-2); }
+.ks-grid button.on { background: var(--accent); color: var(--accent-ink); }
+.ks-today { display: block; margin: 8px auto 0; color: var(--accent); font-weight: 800; padding: 6px 12px; }

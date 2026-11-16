@@ -4,6 +4,7 @@ import { Icon } from '../components/Icon'
 import { addDays, cap1, dayKey, dayLabel, dayStart } from '../util'
 import { BigWorkout, currentClass, isLive, useNow, useSize } from './shared'
 import { PanelHead, type PanelProps } from './panel'
+import { PanelSettings } from './Settings'
 
 /**
  * Æfing dagsins í stóru letri (sjónvarpið).
@@ -13,8 +14,8 @@ export default function WorkoutPanel(pp: PanelProps) {
   const { cfg, setCfg } = pp
   const now = useNow()
   const today = dayKey(now)
-  const [manualDay, setManualDay] = useState(today)
-  const day = cfg.autoDay ? (now.getUTCHours() >= 21 ? addDays(today, 1) : today) : manualDay
+  const [settings, setSettings] = useState<null | 'type' | 'day' | 'prog'>(null)
+  const day = cfg.autoDay || !cfg.day ? (now.getUTCHours() >= 21 ? addDays(today, 1) : today) : cfg.day
 
   const { data: programs } = useData((a) => a.programs())
   const { data: classes } = useData((a) => a.classList(dayStart(day), dayStart(addDays(day, 1))), [day])
@@ -29,21 +30,18 @@ export default function WorkoutPanel(pp: PanelProps) {
   const body = useRef<HTMLDivElement>(null)
   const [bw, bh] = useSize(body)
   const cols = bw > bh * 1.15 && (live?.components.length ?? 0) >= 2 ? 2 : 1
-  const step = (n: number) => { setManualDay(addDays(day, n)); setCfg({ ...cfg, autoDay: false }) }
+  const step = (n: number) => setCfg({ ...cfg, day: addDays(day, n), autoDay: false })
 
   return (
     <div className="kp-panel">
-      <PanelHead {...pp} title="Æfing" sub={
+      <PanelHead {...pp} title="Æfing" onSettings={() => setSettings('prog')} sub={
         <div className="row" style={{ gap: 4, flexWrap: 'wrap' }}>
           <button className="kp-mini" aria-label="Fyrri dagur" onClick={() => step(-1)}><Icon name="back" size={18} /></button>
-          <button className="kp-date" onClick={() => { setCfg({ ...cfg, autoDay: !cfg.autoDay }); setManualDay(day) }} title={cfg.autoDay ? 'Sjálfvirkur dagur' : 'Smelltu til að fylgja deginum sjálfkrafa'}>
-            {cap1(dayLabel(day))}{cfg.autoDay ? '' : ' ·  fastur'}
-          </button>
+          <button className="kp-date" onClick={() => setSettings('day')}>{cap1(dayLabel(day))}{cfg.autoDay ? '' : ' · fastur'}</button>
           <button className="kp-mini" aria-label="Næsti dagur" onClick={() => step(1)}><Icon name="next" size={18} /></button>
-          <select className="kp-prog" value={cfg.prog} onChange={(e) => setCfg({ ...cfg, prog: Number(e.target.value) })} aria-label="Námskeið">
-            <option value={0}>{cfg.prog ? 'Sjálfvirkt' : (prog?.name ?? 'Námskeið') + ' (sjálfvirkt)'}</option>
-            {(programs ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          <button className="kp-prog" onClick={() => setSettings('prog')} aria-label="Skipta um námskeið">
+            <span className="cb-dot" style={{ background: prog?.color, width: 11, height: 11, border: 0 }} />{prog?.name ?? 'Námskeið'}{cfg.prog ? '' : ' · sjálfvirkt'}<Icon name="down" size={16} />
+          </button>
         </div>
       } />
       <div className="kp-body wp-body" ref={body}>
@@ -51,6 +49,10 @@ export default function WorkoutPanel(pp: PanelProps) {
           ? <BigWorkout w={live} title={`${prog?.name ?? ''} – ${cap1(dayLabel(day))}`} scale={cfg.zoom} columns={cols} />
           : <div className="cb-none" style={{ margin: 'auto' }}>Engin birt æfing fyrir {prog?.name ?? 'þetta námskeið'} {dayLabel(day)}</div>}
       </div>
+      {settings && programs && (
+        <PanelSettings cfg={cfg} day={day} programs={programs} autoName={cur?.program} startOpen={settings}
+          onApply={(c) => setCfg(c)} onClose={() => setSettings(null)} />
+      )}
     </div>
   )
 }

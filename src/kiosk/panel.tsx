@@ -2,7 +2,7 @@ import { useState, type ReactNode } from 'react'
 import { Icon } from '../components/Icon'
 
 export type PanelType = 'coachboard' | 'workout'
-export interface PanelCfg { type: PanelType; zoom: number; prog: number; autoDay: boolean }
+export interface PanelCfg { type: PanelType; zoom: number; prog: number; autoDay: boolean; day?: string }
 export interface PanelProps {
   zoom: number
   cfg: PanelCfg
@@ -12,14 +12,14 @@ export interface PanelProps {
 export const PANEL_NAMES: Record<PanelType, string> = { coachboard: 'Coachboard', workout: 'Æfing' }
 
 /** Haus á glugga: „⠿ Coachboard ▾“, dagsetning, stærðarsleði og loka, eins og í Kiosk+ */
-export function PanelHead({ title, sub, cfg, setCfg, onRemove }: PanelProps & { title: string; sub?: ReactNode }) {
+export function PanelHead({ title, sub, cfg, setCfg, onRemove, onSettings }: PanelProps & { title: string; sub?: ReactNode; onSettings?: () => void }) {
   const [open, setOpen] = useState(false)
   const z = cfg.zoom
   const setZ = (v: number) => setCfg({ ...cfg, zoom: Math.min(2.5, Math.max(0.5, Math.round(v * 20) / 20)) })
   return (
     <div className="kp-head">
       <div style={{ position: 'relative', minWidth: 0 }}>
-        <button className="kp-title" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
+        <button className="kp-title" aria-haspopup="menu" aria-expanded={open} onClick={() => (onSettings ? onSettings() : setOpen(!open))}>
           <span className="grip" aria-hidden>⠿</span>{title}<Icon name="down" size={20} />
         </button>
         {open && (
