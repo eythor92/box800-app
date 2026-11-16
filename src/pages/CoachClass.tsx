@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import type { Profile } from '../api'
 import { useApp, useData } from '../ctx'
 import { Avatar, Icon } from '../components/Icon'
-import { dayKey, dayLabel, errMsg, hhmm, initials } from '../util'
+import { dayKey, dayLabel, errMsg, hhmm } from '../util'
 
 type Sheet = null | 'menu' | 'limit' | 'coaches' | 'add'
 
@@ -18,6 +18,7 @@ export default function CoachClass() {
   const [q, setQ] = useState('')
   const [hits, setHits] = useState<Profile[]>([])
   const [openRow, setOpenRow] = useState<string | null>(null)
+  const [drop, setDrop] = useState<null | { name: string; email: string; phone: string }>(null)
 
   const { data: cls } = useData(async (a) => {
     // sækjum tímann sjálfan úr class_list (sama dag)
@@ -42,6 +43,20 @@ export default function CoachClass() {
   const present = booked.filter((r) => r.checked_in).length
   const go = async (fn: () => Promise<unknown>, msg?: string) => {
     try { await fn(); if (msg) toast(msg); refresh() } catch (e) { toast(errMsg(e)) }
+  }
+  const add = (id: string, name: string, waitlist: boolean) => {
+    setSheet(null); setQ('')
+    go(async () => { const r = await api.staffAdd(cid, id, waitlist); toast(r === 'waitlist' ? `${name} er á biðlista` : `${name} bætt í tímann`) })
+  }
+  const addDrop = (waitlist: boolean) => {
+    if (!drop?.name.trim()) { toast('Nafn vantar'); return }
+    const d = drop
+    setDrop(null); setSheet(null); setQ('')
+    go(async () => {
+      const id = await api.createDropin(d.name.trim(), d.email.trim() || undefined, d.phone.trim() || undefined)
+      const r = await api.staffAdd(cid, id, waitlist)
+      toast(r === 'waitlist' ? `${d.name} (drop-in) er á biðlista` : `${d.name} (drop-in) bætt í tímann`)
+    })
   }
 
   return (
@@ -174,15 +189,33 @@ export default function CoachClass() {
             {sheet === 'add' && (
               <>
                 <div style={{ fontSize: 26, fontWeight: 700, marginTop: 10 }}>Bæta við iðkanda</div>
-                <input className="input" style={{ marginTop: 14 }} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Leita að nafni…" aria-label="Leita að iðkanda" autoFocus />
-                {q.trim().length >= 2 && hits.length === 0 && <div className="muted" style={{ padding: '12px 0' }}>Enginn fannst.</div>}
-                {hits.filter((h) => !booked.some((b) => b.profile_id === h.id)).map((h) => (
-                  <button key={h.id} className="row" style={{ width: '100%', padding: '10px 0', borderBottom: '1px solid var(--line)' }}
-                    onClick={() => { setSheet(null); go(async () => { const r = await api.book(cid, h.id); toast(r === 'waitlist' ? `${h.full_name} fór á biðlista` : `${h.full_name} bætt við`) }) }}>
-                    <span className="avatar" style={{ width: 38, height: 38 }}>{initials(h.full_name)}</span>
-                    <span className="grow">{h.full_name}</span><span style={{ color: 'var(--accent)', fontWeight: 700 }}>Bæta við</span>
-                  </button>
-                ))}
+                {!drop ? (
+                  <>
+                    <input className="input" style={{ marginTop: 14 }} value={q} onChange={(e) => setQ(e.target.value)} placeholder="Leita að nafni…" aria-label="Leita að iðkanda" autoFocus />
+                    {q.trim().length >= 2 && hits.length === 0 && <div className="muted" style={{ padding: '12px 0' }}>Enginn fannst.</div>}
+                    {hits.filter((h) => !booked.some((b) => b.profile_id === h.id)).map((h) => (
+                      <div key={h.id} className="row" style={{ width: '100%', padding: '10px 0', borderBottom: '1px solid var(--line)', gap: 10 }}>
+                        <Avatar src={h.avatar_url} name={h.full_name} size={38} />
+                        <span className="grow ellipsis" style={{ minWidth: 0 }}>{h.full_name}</span>
+                        <button className="btn btn-primary btn-sm" style={{ padding: '0 10px', flexShrink: 0 }} onClick={() => add(h.id, h.full_name, false)}>Í tímann</button>
+                        <button className="btn btn-ghost btn-sm" style={{ padding: '0 10px', flexShrink: 0 }} aria-label={`Setja ${h.full_name} á biðlista`} onClick={() => add(h.id, h.full_name, true)}>Biðlisti</button>
+                      </div>
+                    ))}
+                    <button className="btn btn-block" style={{ marginTop: 14, border: '1.5px dashed var(--accent)', color: 'var(--accent)' }} onClick={() => setDrop({ name: q, email: '', phone: '' })}>+ Drop-in (ekki með aðgang)</button>
+                  </>
+                ) : (
+                  <form onSubmit={(e) => e.preventDefault()}>
+                    <div className="muted" style={{ marginTop: 6 }}>Gestur sem er ekki með aðgang í appinu. Netfang er valfrjálst, en ef það er skráð getur gesturinn síðar stofnað aðgang og þá tengist sagan sjálfkrafa.</div>
+                    <label className="field" style={{ marginTop: 14 }}><span>Nafn *</span><input className="input" value={drop.name} onChange={(e) => setDrop({ ...drop, name: e.target.value })} autoFocus /></label>
+                    <label className="field" style={{ marginTop: 10 }}><span>Farsími</span><input className="input" type="tel" value={drop.phone} onChange={(e) => setDrop({ ...drop, phone: e.target.value })} /></label>
+                    <label className="field" style={{ marginTop: 10 }}><span>Netfang</span><input className="input" type="email" value={drop.email} onChange={(e) => setDrop({ ...drop, email: e.target.value })} /></label>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginTop: 18 }}>
+                      <button type="button" className="btn btn-primary" onClick={() => addDrop(false)}>Í tímann</button>
+                      <button type="button" className="btn btn-ghost" onClick={() => addDrop(true)}>Á biðlista</button>
+                    </div>
+                    <button type="button" className="btn btn-block" style={{ marginTop: 8, color: 'var(--accent)' }} onClick={() => setDrop(null)}>Til baka</button>
+                  </form>
+                )}
               </>
             )}
           </div>

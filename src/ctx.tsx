@@ -7,6 +7,7 @@ interface Ctx {
   tick: number          // hækkar þegar gögn breytast (rauntími)
   refresh: () => void
   toast: (msg: string) => void
+  reloadMe?: () => void
 }
 export const AppCtx = createContext<Ctx>(null as never)
 export const useApp = () => useContext(AppCtx)

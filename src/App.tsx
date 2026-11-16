@@ -18,6 +18,7 @@ import AdminMembers from './admin/AdminMembers'
 import AdminMemberProfile from './admin/AdminMemberProfile'
 import KioskPlus from './kiosk/KioskPlus'
 import Results from './pages/Results'
+import MyProfile from './pages/MyProfile'
 import LiftHistory from './pages/LiftHistory'
 import Leaderboard from './pages/Leaderboard'
 
@@ -56,7 +57,7 @@ export default function App() {
   const owner = me.role === 'owner'
 
   return (
-    <AppCtx.Provider value={{ api, me, tick, refresh: () => setTick((t) => t + 1), toast }}>
+    <AppCtx.Provider value={{ api, me, tick, refresh: () => setTick((t) => t + 1), toast, reloadMe: () => { loadMe(api) } }}>
       <HashRouter>
         <Routes>
           <Route element={<MobileShell />}>
@@ -65,6 +66,7 @@ export default function App() {
             <Route path="/aefing" element={<WorkoutView />} />
             <Route path="/maeting" element={<Attendance />} />
             <Route path="/arangur" element={<Results />} />
+            <Route path="/profill" element={<MyProfile />} />
             <Route path="/arangur/:id" element={<LiftHistory />} />
             <Route path="/stigatafla/:id" element={<Leaderboard />} />
             {staff && <Route path="/thjalfari" element={<CoachClasses />} />}

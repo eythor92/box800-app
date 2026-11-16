@@ -5,6 +5,7 @@ import initSql from '../../supabase/migrations/001_init.sql?raw'
 import seedSql from '../../supabase/migrations/002_seed.sql?raw'
 import resultsSql from '../../supabase/migrations/005_results.sql?raw'
 import profileSql from '../../supabase/migrations/007_profile.sql?raw'
+import dropinSql from '../../supabase/migrations/008_mynd_dropin.sql?raw'
 import demoSql from '../../supabase/demo/demo_seed.sql?raw'
 import type { Api, Profile, Settings, Workout } from './types'
 
@@ -28,6 +29,7 @@ export async function demoApi(): Promise<Api> {
   await db.exec(seedSql)
   await db.exec(resultsSql)
   await db.exec(profileSql)
+  await db.exec(dropinSql)
   await db.exec(demoSql)
 
   let current: string | null = sessionStorageGet()
@@ -123,6 +125,14 @@ export async function demoApi(): Promise<Api> {
     membershipsOf: (id) => rows(`select id, plan, to_char(starts_on, 'YYYY-MM-DD') starts_on, to_char(ends_on, 'YYYY-MM-DD') ends_on, status, source from memberships where profile_id = $1 order by starts_on desc`, [id]),
     attendanceOf: (id) => rows(`select * from my_attendance($1)`, [id]),
     liftsOf: (id) => rows(`select *, to_char(last_day, 'YYYY-MM-DD') as last_day from my_lifts($1)`, [id]).then(numify),
+    addMembership: async (m) => { await write(`insert into memberships (profile_id, plan, starts_on, ends_on) values ($1, $2, $3, $4)`, [m.profile_id, m.plan, m.starts_on, m.ends_on]) },
+    endMembership: async (id) => { await write(`update memberships set status = 'cancelled' where id = $1`, [id]) },
+    uploadAvatar: async (pid, jpeg) => {
+      const url = await new Promise<string>((ok) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.readAsDataURL(jpeg) })
+      await write(`update profiles set avatar_url = $2 where id = $1`, [pid, url]); return url
+    },
+    staffAdd: (c, p, w) => val(`select staff_add($1, $2, $3)`, [c, p, w]),
+    createDropin: (n, e, ph) => val(`select create_dropin($1, $2, $3)`, [n, e ?? null, ph ?? null]),
     leaderboard: (w, k) => rows(`select * from component_leaderboard($1, $2)`, [w, k]).then(numify),
     subscribe(cb) { listeners.add(cb); return () => listeners.delete(cb) },
   }

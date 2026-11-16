@@ -207,4 +207,11 @@ export interface Api {
   membershipsOf(id: string): Promise<Membership[]>
   attendanceOf(id: string): Promise<Attendance[]>
   liftsOf(id: string): Promise<LiftSummary[]>
+  addMembership(m: { profile_id: string; plan: string; starts_on: string; ends_on: string | null }): Promise<void>
+  endMembership(id: number): Promise<void>
+  /** Hleður upp mynd (JPEG) og setur sem prófílmynd. Skilar slóðinni. */
+  uploadAvatar(profileId: string, jpeg: Blob): Promise<string>
+  // þjálfari: bæta við í tíma eða á biðlista, og drop-in gestir
+  staffAdd(classId: number, profileId: string, waitlist: boolean): Promise<string>
+  createDropin(name: string, email?: string, phone?: string): Promise<string>
 }

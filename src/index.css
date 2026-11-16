@@ -439,3 +439,7 @@ a { color: var(--accent); }
 .mp-role-row input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--accent); flex-shrink: 0; }
 .mp-role-row small { display: block; color: var(--muted); font-size: 13px; }
 @media (max-width: 800px) { .mp-grid, .mp-head { grid-template-columns: 1fr; } .mp-av { align-items: flex-start; } .mp-form { grid-template-columns: 1fr; } }
+
+/* Prófílmynd sem má skipta um */
+.av-up { position: relative; border-radius: 99px; padding: 0; flex-shrink: 0; }
+.av-up .av-cam { position: absolute; right: 2px; bottom: 2px; width: 34px; height: 34px; border-radius: 99px; background: var(--accent); color: var(--accent-ink); display: flex; align-items: center; justify-content: center; border: 3px solid var(--card); }

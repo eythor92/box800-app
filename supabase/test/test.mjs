@@ -19,6 +19,7 @@ try { await db.exec(fs.readFileSync(new URL('001_init.sql', dir), 'utf8')); } ca
 await db.exec(fs.readFileSync(new URL('002_seed.sql', dir), 'utf8'));
 try { await db.exec(fs.readFileSync(new URL('005_results.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 005:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('007_profile.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 007:', e.message, e.position); process.exit(1); }
+try { await db.exec(fs.readFileSync(new URL('008_mynd_dropin.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 008:', e.message, e.position); process.exit(1); }
 console.log('Uppsetning tókst');
 
 // Notendur
@@ -165,6 +166,16 @@ await as(members[4]); await expectErr(() => q(`select book_class($1)`, [w20.id])
 await q(`update profiles set status = 'active' where auth_id = $1`, [members[4]]);
 ok((await q(`select status from profiles where auth_id = $1`, [members[4]]))[0].status === 'suspended', 'Iðkandi getur ekki virkjað sig sjálfur');
 await as(U.eythor); await q(`update profiles set status = 'active' where auth_id = $1`, [members[4]]);
+
+// Þjálfari: setja á biðlista og drop-in
+await as(U.alda);
+const [wl] = await q(`insert into classes (program_id, starts_at, ends_at) select id, now() + interval '1 day', now() + interval '1 day 1 hour' from programs where name = 'Hreysti' returning id`);
+ok((await q(`select staff_add($1, $2, true) s`, [wl.id, await pid(members[0])]))[0].s === 'waitlist', 'Þjálfari setur iðkanda á biðlista (þó laust sé)');
+const [di] = await q(`select create_dropin('Gestur Gestsson', null, '8881234') id`);
+ok(!!di.id, 'Þjálfari stofnar drop-in gest án netfangs');
+ok((await q(`select staff_add($1, $2, true) s`, [wl.id, di.id]))[0].s === 'waitlist', 'Drop-in fer á biðlista');
+ok((await q(`select staff_add($1, $2, false) s`, [wl.id, await pid(members[1])]))[0].s === 'booked', 'Þjálfari bætir beint í tímann');
+await as(members[2]); await expectErr(() => q(`select create_dropin('X')`), 'Aðeins þjálfarar', 'Iðkandi getur ekki stofnað drop-in');
 
 // Skor
 const [bs] = await q(`select id from movements where name = 'Back Squat'`);

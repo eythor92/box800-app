@@ -97,6 +97,18 @@ export function supabaseApi(url: string, key: string): Api {
     async membershipsOf(id) { return must(await sb.from('memberships').select('*').eq('profile_id', id).order('starts_on', { ascending: false })) },
     attendanceOf: (id) => rpc('my_attendance', { p_profile: id }),
     liftsOf: (id) => rpc('my_lifts', { p_profile: id }),
+    async addMembership(m) { must(await sb.from('memberships').insert({ ...m, source: 'manual' })) },
+    async endMembership(id) { must(await sb.from('memberships').update({ status: 'cancelled' }).eq('id', id)) },
+    async uploadAvatar(profileId, jpeg) {
+      const path = `${profileId}/${Date.now()}.jpg`
+      const up = await sb.storage.from('avatars').upload(path, jpeg, { contentType: 'image/jpeg', upsert: true })
+      if (up.error) throw new Error(up.error.message)
+      const url = sb.storage.from('avatars').getPublicUrl(path).data.publicUrl
+      must(await sb.from('profiles').update({ avatar_url: url }).eq('id', profileId))
+      return url
+    },
+    staffAdd: (c, p, w) => rpc('staff_add', { p_class: c, p_profile: p, p_waitlist: w }),
+    createDropin: (name, email, phone) => rpc('create_dropin', { p_name: name, p_email: email ?? null, p_phone: phone ?? null }),
     leaderboard: (w, k) => rpc('component_leaderboard', { p_workout: w, p_key: k }),
     subscribe(cb) {
       const ch = sb.channel('box800')

@@ -17,7 +17,7 @@ export default function MobileShell() {
   const staff = me.role !== 'member'
   const coachMode = loc.pathname.startsWith('/thjalfari')
   const isClassPage = loc.pathname.startsWith('/thjalfari/timi')
-  const title = TITLES[loc.pathname] ?? (loc.pathname.startsWith('/arangur') ? 'Árangur' : loc.pathname.startsWith('/stigatafla') ? 'Stigatafla' : undefined)
+  const title = (loc.pathname === '/profill' ? 'Prófíll' : TITLES[loc.pathname]) ?? (loc.pathname.startsWith('/arangur') ? 'Árangur' : loc.pathname.startsWith('/stigatafla') ? 'Stigatafla' : undefined)
 
   async function openBell() {
     setBell(true)
@@ -87,13 +87,14 @@ export default function MobileShell() {
           <button className="sheet-back" aria-label="Loka valmynd" onClick={() => setMenu(false)} />
           <nav className="drawer" aria-label="Valmynd" onClick={() => setMenu(false)}>
             <img src="myndir/logo-white.png" alt="BOX800" style={{ height: 44, alignSelf: 'flex-start', marginBottom: 20 }} />
-            <div className="row" style={{ marginBottom: 18 }}>
+            <Link to="/profill" className="row" style={{ marginBottom: 18, border: 0, textDecoration: 'none' }}>
               <Avatar src={me.avatar_url} name={me.full_name || me.email || '?'} />
               <div><div style={{ fontWeight: 700 }}>{me.full_name || 'Án nafns'}</div><div className="muted" style={{ fontSize: 13 }}>{me.email}</div></div>
-            </div>
+            </Link>
             <Link to="/">Heim</Link>
             <Link to="/timatafla">Tímatafla</Link>
             <Link to="/arangur">Árangur</Link>
+            <Link to="/profill">Prófíllinn minn</Link>
             {me.role !== 'member' && <Link to="/kiosk">Kiosk+</Link>}
             {me.role === 'owner' && <Link to="/stjorn">Stjórnborð</Link>}
             <button className="link" onClick={() => api.signOut()}>Skrá út</button>

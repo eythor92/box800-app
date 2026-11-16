@@ -2,7 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import type { Profile, Role } from '../api'
 import { useApp, useData } from '../ctx'
-import { Avatar, Icon } from '../components/Icon'
+import { Icon } from '../components/Icon'
+import AvatarUpload from '../components/AvatarUpload'
 import { addDays, cap1, dayKey, dayLabel, dayStart, errMsg, hhmm, relDay, today } from '../util'
 import { kg } from '../score'
 
@@ -45,6 +46,7 @@ export default function AdminMemberProfile() {
   const [menu, setMenu] = useState(false)
   const [addCls, setAddCls] = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
+  const [nm, setNm] = useState<null | { plan: string; starts_on: string; ends_on: string }>(null)
   const [busy, setBusy] = useState(false)
   useEffect(() => { if (p) setF({ ...p }) }, [p])
 
@@ -107,7 +109,7 @@ export default function AdminMemberProfile() {
 
       <section className="a-card mp-head" style={{ marginTop: 16 }}>
         <div className="mp-av">
-          <Avatar src={p.avatar_url} name={p.full_name || '?'} size={112} />
+          <AvatarUpload profileId={p.id} src={p.avatar_url} name={p.full_name || '?'} size={112} />
           {p.role !== 'member' && <span className="mp-role">{ROLE_LABEL[p.role]}</span>}
         </div>
         <div className="mp-facts">
@@ -186,7 +188,20 @@ export default function AdminMemberProfile() {
       {tab === 'membership' && (
         <section className="a-card" style={{ marginTop: 16 }}>
           <h2 className="mp-h" style={{ marginTop: 0 }}>Áskrift</h2>
-          <div className="muted" style={{ fontSize: 14, marginBottom: 10 }}>Áskriftir og greiðslur koma frá Abler.</div>
+          <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', marginBottom: 10 }}>
+            <div className="muted" style={{ fontSize: 14 }}>Greiðslur fara í gegnum Abler. Þangað til Abler er tengt skráir þú áskriftina hér, svo iðkandinn geti bókað.</div>
+            <button className="btn btn-primary btn-sm" onClick={() => setNm({ plan: '', starts_on: today(), ends_on: '' })}>+ Áskrift</button>
+          </div>
+          {nm && (
+            <form className="stat" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: 10, alignItems: 'end', marginBottom: 12 }}
+              onSubmit={async (e) => { e.preventDefault(); if (!nm.plan.trim()) { toast('Nafn áskriftar vantar'); return } try { await api.addMembership({ profile_id: id, plan: nm.plan.trim(), starts_on: nm.starts_on, ends_on: nm.ends_on || null }); toast('Áskrift skráð'); setNm(null); refresh() } catch (er) { toast(errMsg(er)) } }}>
+              <label className="field"><span>Áskrift</span><input className="input" list="plans" value={nm.plan} onChange={(e) => setNm({ ...nm, plan: e.target.value })} placeholder="T.d. 12 mánaða samningur" autoFocus /></label>
+              <datalist id="plans">{['Mánaðaráskrift', '3 mánuðir', '12 mánaða samningur', '10 skipta kort', 'Námskeið', 'Þjálfari'].map((x) => <option key={x} value={x} />)}</datalist>
+              <label className="field"><span>Byrjar</span><input className="input" type="date" value={nm.starts_on} onChange={(e) => setNm({ ...nm, starts_on: e.target.value })} /></label>
+              <label className="field"><span>Gildir til (autt = endurnýjast)</span><input className="input" type="date" value={nm.ends_on} onChange={(e) => setNm({ ...nm, ends_on: e.target.value })} /></label>
+              <div className="row"><button type="button" className="btn btn-ghost btn-sm" onClick={() => setNm(null)}>Hætta við</button><button className="btn btn-primary btn-sm">Vista</button></div>
+            </form>
+          )}
           {ms && ms.length === 0 && <div className="empty">Engin áskrift skráð.</div>}
           {ms && ms.length > 0 && (
             <div className="a-table">
@@ -196,7 +211,8 @@ export default function AdminMemberProfile() {
                 return (
                   <div key={m.id} className="tr" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr' }}>
                     <div style={{ fontWeight: 700 }}>{m.plan}</div><div>{dayLabel(m.starts_on)}</div><div>{m.ends_on ? dayLabel(m.ends_on) : 'Endurnýjast'}</div>
-                    <div><span className={`badge ${live ? 'badge-ok' : 'badge-grey'}`}>{live ? 'VIRK' : 'ÓVIRK'}</span></div>
+                    <div className="row" style={{ gap: 8 }}><span className={`badge ${live ? 'badge-ok' : 'badge-grey'}`}>{live ? 'VIRK' : 'ÓVIRK'}</span>
+                      {live && <button className="btn btn-ghost btn-sm" onClick={async () => { try { await api.endMembership(m.id); toast('Áskrift stöðvuð'); refresh() } catch (e) { toast(errMsg(e)) } }}>Stöðva</button>}</div>
                   </div>
                 )
               })}
