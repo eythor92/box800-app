@@ -25,7 +25,7 @@ export default function AdminClasses() {
           <h1>Tímar og fjöldi</h1>
           <div className="muted" style={{ fontSize: 14 }}>Breyttu hámarksfjölda hvenær sem er, fyrir hvern tíma. Ef plássum fjölgar fer fólk sjálfkrafa inn af biðlista.</div>
         </div>
-        <div className="row" style={{ gap: 4, background: 'var(--card-2)', border: '1px solid var(--line)', borderRadius: 12, padding: 4 }}>
+        <div className="row" style={{ gap: 4, background: 'var(--card-2)', border: '1px solid var(--line)', borderRadius: 3, padding: 4 }}>
           <button className="icon-btn" aria-label="Fyrri dagur" onClick={() => setDay(addDays(day, -1))}><Icon name="back" /></button>
           <div style={{ minWidth: 210, textAlign: 'center', fontWeight: 700 }}>{cap1(dayLabel(day, true))}</div>
           <button className="icon-btn" aria-label="Næsti dagur" onClick={() => setDay(addDays(day, 1))}><Icon name="next" /></button>
@@ -71,7 +71,7 @@ export default function AdminClasses() {
         <div className="muted" style={{ fontSize: 14 }}>Gildir fyrir alla tíma námskeiðsins nema þá sem þú hefur breytt sérstaklega.</div>
         <div className="row" style={{ flexWrap: 'wrap', gap: 12, marginTop: 14 }}>
           {(programs ?? []).map((p) => (
-            <div key={p.id} className="row" style={{ background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 12, padding: '8px 10px' }}>
+            <div key={p.id} className="row" style={{ background: 'var(--bg)', border: '1px solid var(--line)', borderRadius: 3, padding: '8px 10px' }}>
               <span className="dot" style={{ background: p.color }} /><span style={{ fontWeight: 600, minWidth: 120 }}>{p.name}</span>
               <div className="stepper">
                 <button aria-label={`Fækka í ${p.name}`} onClick={async () => { if (p.default_cap > 1) { await api.updateProgramCap(p.id, p.default_cap - 1); refresh() } }}>−</button>

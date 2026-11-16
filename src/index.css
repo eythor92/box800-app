@@ -1,18 +1,17 @@
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --bg: #121416;
-  --bg-deep: #0b0c0e;
-  --card: #17191c;
-  --card-2: #1a1d20;
-  --band: #1f2226;
-  --line: #2a2e33;
-  --line-2: #3a4047;
+  --bg: #090b0d;
+  --bg-deep: #050607;
+  --card: #15191d;
+  --card-2: #1a1f24;
+  --band: #1f2429;
+  --line: #262c32;
+  --line-2: #343b42;
   --text: #f1f3f5;
   --text-2: #d4d9de;
-  --muted: #9aa3ad;
-  --accent: #5aaee0;
-  --accent-ink: #0b0c0e;
+  --muted: #9ea7ae;
+  --accent: #c6ccd6;
+  --accent-ink: #101215;
   --warn: #f2b84b;
   --danger: #f0a3a3;
   --danger-line: #6b3a3a;
@@ -25,7 +24,7 @@
 html, body, #root { margin: 0; min-height: 100%; }
 body {
   background: var(--bg); color: var(--text);
-  font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.4;
+  font-family: Inter, Arial, sans-serif; font-size: 15px; line-height: 1.45;
   -webkit-font-smoothing: antialiased; -webkit-tap-highlight-color: transparent;
 }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; margin: 0; cursor: pointer; text-align: left; }
@@ -171,3 +170,62 @@ a { color: var(--accent); }
   .a-side .sub { padding-left: 16px; }
   .a-main h1 { font-size: 32px; }
 }
+
+/* ==========================================
+   Stíll heimasíðunnar box800.is: svart, ljósgráblátt,
+   Barlow Condensed í hástöfum og skörp horn
+   ========================================== */
+:root { --r: 3px; }
+.display, .a-main h1, .m-head .title, .class-row .name, .sheet h2, .modal h2 {
+  font-family: var(--display); font-weight: 800; text-transform: uppercase; letter-spacing: .015em; line-height: 1.05;
+}
+.class-row .name { font-size: 22px; color: #fff; }
+.class-row.past .name { color: var(--muted); }
+.a-main h1 { font-size: 46px; }
+
+.btn, .btn-sm, .pill-btn, .chip, .m-seg button {
+  text-transform: uppercase; letter-spacing: .5px; font-weight: 800; font-size: 12.5px;
+}
+.btn { border-radius: var(--r); height: 48px; padding: 0 22px; transition: transform .2s ease, background .2s ease, color .2s ease; }
+.btn-sm { border-radius: var(--r); font-size: 11.5px; }
+.btn-primary:hover:not(:disabled) { background: #e6e9ef; }
+.btn-outline { border: 1px solid #d6d6d6; color: #fff; }
+.btn-outline:hover:not(:disabled) { background: #fff; color: #111; }
+.btn-ghost { border-color: var(--line-2); }
+.pill-btn { border-radius: var(--r); border-width: 1px; }
+.chip { border-radius: var(--r); font-size: 11.5px; }
+.chip.on { background: var(--accent); border-color: var(--accent); }
+.m-seg button { border-radius: var(--r); font-size: 11.5px; }
+.m-seg button.on { background: var(--accent); }
+.icon-btn { border-radius: var(--r); }
+
+.input, .select, .textarea { border-radius: var(--r); background: #0f1215; }
+.card, .a-card, .a-table, .stat, .empty, .error, .modal, .toast, .workout-box { border-radius: var(--r); }
+.card { border-color: var(--line-2); }
+.badge { border-radius: 2px; letter-spacing: 1px; }
+.sheet { border-radius: 6px 6px 0 0; border-top-color: var(--line-2); }
+
+.label, .field > span, .section-title, .workout-sec, .a-table .thead { color: var(--accent); letter-spacing: 2px; font-weight: 800; font-size: 11.5px; }
+.section-title { text-transform: uppercase; }
+
+.m-top { background: rgba(9,11,13,.96); border-bottom: 1px solid var(--line-2); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); }
+.m-nav { border-radius: 4px; background: rgba(9,11,13,.96); border: 1px solid var(--line-2); }
+.m-nav a { border-radius: 2px; text-transform: uppercase; font-size: 10.5px; font-weight: 800; letter-spacing: .4px; }
+.m-nav a.active { background: var(--accent); color: var(--accent-ink); }
+
+.daybar button .n { font-family: var(--display); font-size: 25px; font-weight: 800; }
+.daybar button .d { text-transform: uppercase; font-size: 11px; font-weight: 800; letter-spacing: 1px; }
+.daybar button.on .n { color: #fff; }
+
+.workout-box .h { color: #fff; font-family: var(--display); font-size: 22px; font-weight: 800; text-transform: uppercase; }
+
+.a-side { background: var(--bg-deep); border-right-color: var(--line-2); }
+.a-side .grp { border-radius: var(--r); text-transform: uppercase; font-size: 12.5px; font-weight: 800; letter-spacing: .5px; }
+.a-side .grp.active, .a-side .sub.active { background: #1a1f24; color: #fff; box-shadow: inset 3px 0 0 var(--accent); }
+.a-side .sub { border-radius: var(--r); }
+.stepper button { border-radius: var(--r); }
+
+.auth { background:
+  linear-gradient(90deg, rgba(4,6,8,.94) 0%, rgba(4,6,8,.8) 50%, rgba(4,6,8,.55) 100%),
+  url('./assets/forsida.webp') 65% center / cover no-repeat, var(--bg); }
+.toast { background: var(--accent); color: var(--accent-ink); }

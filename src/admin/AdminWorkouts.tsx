@@ -107,7 +107,7 @@ export default function AdminWorkouts() {
             <button key={x.id} className={`chip${x.id === prog ? ' on' : ''}`} onClick={() => setPid(x.id)}><span className="dot" style={{ background: x.color }} />{x.name}</button>
           ))}
         </div>
-        <div className="row" style={{ gap: 4, background: 'var(--card-2)', border: '1px solid var(--line)', borderRadius: 12, padding: 4 }}>
+        <div className="row" style={{ gap: 4, background: 'var(--card-2)', border: '1px solid var(--line)', borderRadius: 3, padding: 4 }}>
           <button className="icon-btn" aria-label="Fyrri" onClick={() => setDay(addDays(day, view === 'week' ? -7 : -1))}><Icon name="back" /></button>
           <div style={{ minWidth: 200, textAlign: 'center', fontWeight: 700 }}>{view === 'week' ? `Vika ${dayLabel(week)} – ${dayLabel(addDays(week, 6))}` : cap1(dayLabel(day, true))}</div>
           <button className="icon-btn" aria-label="Næsti" onClick={() => setDay(addDays(day, view === 'week' ? 7 : 1))}><Icon name="next" /></button>
@@ -126,7 +126,7 @@ export default function AdminWorkouts() {
                 {Array.from({ length: 7 }, (_, i) => {
                   const d = addDays(week, i), ww = (workouts ?? []).find((z) => z.program_id === x.id && z.day === d)
                   return (
-                    <button key={i} onClick={() => { setPid(x.id); setDay(d); setView('day') }} style={{ minHeight: 56, padding: 6, borderRadius: 8, background: ww ? 'var(--card)' : 'transparent', fontSize: 13 }}>
+                    <button key={i} onClick={() => { setPid(x.id); setDay(d); setView('day') }} style={{ minHeight: 56, padding: 6, borderRadius: 3, background: ww ? 'var(--card)' : 'transparent', fontSize: 13 }}>
                       <div style={{ fontWeight: 600, color: ww ? 'var(--text)' : 'var(--accent)' }} className="ellipsis">{ww ? ww.components[0]?.title || 'Æfing' : '+ Skrifa'}</div>
                       {ww && <div style={{ fontSize: 11, fontWeight: 800, color: ww.status === 'published' ? 'var(--ok)' : 'var(--muted)' }}>{ww.status === 'published' ? 'BIRT' : 'DRÖG'}</div>}
                     </button>
@@ -159,7 +159,7 @@ export default function AdminWorkouts() {
             )}
 
             {w.components.map((c, i) => (
-              <div key={i} style={{ marginTop: 16, border: '1px solid #30353b', borderRadius: 12, background: 'var(--bg)', padding: '12px 16px 16px' }}>
+              <div key={i} style={{ marginTop: 16, border: '1px solid #30353b', borderRadius: 3, background: 'var(--bg)', padding: '12px 16px 16px' }}>
                 <div className="row" style={{ gap: 4 }}>
                   <span className="label grow"><span style={{ color: 'var(--accent)' }}>{i + 1}.</span> {LABEL[c.type]}</span>
                   <button className="icon-btn" style={{ width: 36, height: 36 }} aria-label="Færa upp" onClick={() => i > 0 && set((n) => { [n.components[i - 1], n.components[i]] = [n.components[i], n.components[i - 1]] })}><Icon name="up" size={18} /></button>
@@ -235,7 +235,7 @@ export default function AdminWorkouts() {
 
           <aside style={{ flex: '1 1 280px', maxWidth: 340 }} aria-label="Forskoðun">
             <div className="label" style={{ marginBottom: 8 }}>Svona sést þetta í appinu</div>
-            <div style={{ border: '1px solid var(--line)', borderRadius: 22, background: 'var(--bg)', padding: '18px 16px 20px', fontSize: 14 }}>
+            <div style={{ border: '1px solid var(--line)', borderRadius: 3, background: 'var(--bg)', padding: '18px 16px 20px', fontSize: 14 }}>
               <div className="display" style={{ fontSize: 22 }}>{p?.name} – {dayLabel(day)}</div>
               {w.components.length ? <WorkoutRender w={w} /> : <div className="muted" style={{ marginTop: 12 }}>Ekkert til að sýna enn.</div>}
             </div>
@@ -259,7 +259,7 @@ export default function AdminWorkouts() {
                 ['image', 'Mynd', 'T.d. uppsetning á stöðvum', false],
               ] as const).map(([t, l, d, main]) => (
                 <button key={t} onClick={() => add({ type: t, title: t === 'metcon' && !w.components.length ? cap1(dayLabel(day, true).split(' ')[0]) : '', body: '', scoring: t === 'metcon' ? 'Hak (lokið)' : undefined, scaling: 'Engin' })}
-                  className="row" style={{ minHeight: 58, padding: '0 16px', borderRadius: 12, border: `1.5px solid ${main ? 'var(--accent)' : '#30353b'}`, background: main ? '#162430' : 'transparent' }}>
+                  className="row" style={{ minHeight: 58, padding: '0 16px', borderRadius: 3, border: `1.5px solid ${main ? 'var(--accent)' : '#30353b'}`, background: main ? '#162430' : 'transparent' }}>
                   <span className="grow"><span style={{ display: 'block', color: 'var(--accent)', fontWeight: 700 }}>{l}</span><span className="muted" style={{ fontSize: 13 }}>{d}</span></span>
                   {main && <span className="badge badge-accent">MEST NOTAÐ</span>}
                 </button>
@@ -269,7 +269,7 @@ export default function AdminWorkouts() {
               <input className="input" value={libQ} onChange={(e) => setLibQ(e.target.value)} placeholder="Leita í æfingasafni" aria-label="Leita í æfingasafni" />
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
                 {LIBRARY.filter(([n]) => !libQ || n.toLowerCase().includes(libQ.toLowerCase())).map(([n, s, b]) => (
-                  <button key={n} className="row" style={{ minHeight: 46, padding: '0 16px', borderRadius: 10, border: '1px solid var(--line)', justifyContent: 'space-between', fontWeight: 600 }}
+                  <button key={n} className="row" style={{ minHeight: 46, padding: '0 16px', borderRadius: 3, border: '1px solid var(--line)', justifyContent: 'space-between', fontWeight: 600 }}
                     onClick={() => add({ type: 'lift', title: n, body: b, scoring: s, scaling: 'Engin' })}>{n}<span className="muted" style={{ fontSize: 13, fontWeight: 500 }}>{s}</span></button>
                 ))}
               </div>
