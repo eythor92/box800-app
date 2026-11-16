@@ -13,7 +13,7 @@ Ein vefsíða sem virkar líka sem app í símanum (PWA: „Bæta við heimaskj�
 ## Uppsetning (einu sinni)
 1. Supabase → SQL Editor: keyra `001_init.sql`, svo `002_seed.sql`. (Database → Extensions: kveikja á `pg_cron`, keyra `003_cron.sql`.)
 2. Supabase → Authentication → URL Configuration: Site URL = slóð appsins.
-3. GitHub → Settings → Secrets and variables → Actions → **Variables**: `VITE_SUPABASE_URL` og `VITE_SUPABASE_ANON_KEY`.
+3. Supabase-slóð og opinber (publishable) lykill eru í `.env.production` – þau mega vera opinber, aðgangsreglurnar eru í gagnagrunninum.
 4. GitHub → Settings → Pages → Source: **GitHub Actions**.
 5. Eigandi skráir sig inn í appið og keyrir svo í SQL Editor:
    `update profiles set role = 'owner' where email = '<netfang eiganda>';`
