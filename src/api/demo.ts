@@ -109,6 +109,7 @@ export async function demoApi(): Promise<Api> {
     myComponentResults: (f, t) => rows(`select *, to_char(day, 'YYYY-MM-DD') as day from my_component_results($1, $2)`, [f, t]).then(numify),
     liftHistory: (m) => rows(`select *, to_char(day, 'YYYY-MM-DD') as day from lift_history($1)`, [m]).then(numify),
     myLifts: () => rows(`select *, to_char(last_day, 'YYYY-MM-DD') as last_day from my_lifts()`).then(numify),
+    spotlight: () => rows(`select *, to_char(at, 'YYYY-MM-DD') as at from spotlight(3)`),
     leaderboard: (w, k) => rows(`select * from component_leaderboard($1, $2)`, [w, k]).then(numify),
     subscribe(cb) { listeners.add(cb); return () => listeners.delete(cb) },
   }

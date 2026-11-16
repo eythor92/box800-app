@@ -111,3 +111,18 @@ from (select id, row_number() over (order by full_name desc) rn from profiles wh
 join (values (1, 6040, 'Rx'), (2, 5120, 'Rx'), (3, 6010, 'Scaled'), (4, 5120, 'Rx'), (5, 4300, 'Scaled'), (6, 7002, 'Rx')) v(rn, n, rx) on v.rn = pr.rn,
      workouts w join programs p on p.id = w.program_id
 where p.name = 'Hreysti' and w.day = current_date;
+
+-- Kastljós: áfangar annarra
+with m as (select id from profiles where role = 'member' and email <> 'idkandi@box800.demo' order by full_name offset 2 limit 1),
+     cl as (
+       insert into classes (program_id, starts_at, ends_at)
+       select (select id from programs where name = 'Hreysti'), (current_date - g) + time '06:30', (current_date - g) + time '07:20'
+       from generate_series(1, 25) g returning id, starts_at)
+insert into bookings (class_id, profile_id, status, checked_in_at) select cl.id, m.id, 'booked', cl.starts_at from cl, m;
+insert into memberships (profile_id, plan, starts_on)
+select id, '12 mánaða samningur', current_date - interval '2 years' - interval '1 day'
+from profiles where role = 'member' and email <> 'idkandi@box800.demo' order by full_name offset 3 limit 1;
+insert into results (profile_id, day, movement_id, sets, reps, weight, kind, score_num)
+select p.id, current_date - v.d, (select id from movements where name = 'Deadlift'), 1, 1, v.w, 'weight', v.w
+from (select id from profiles where role = 'member' and email <> 'idkandi@box800.demo' order by full_name offset 4 limit 1) p,
+     (values (60, 100), (1, 112.5)) v(d, w);

@@ -374,3 +374,50 @@ a { color: var(--accent); }
 .lb-row .rk { width: 34px; color: var(--muted); font-weight: 700; flex-shrink: 0; }
 .lb-row b { color: var(--accent); font-family: var(--display); font-weight: 800; font-size: 26px; }
 .lb-row.me { background: var(--card-2); box-shadow: inset 3px 0 0 var(--accent); }
+
+/* Heim */
+.h-hero { position: relative; padding: 26px 16px 22px; background-size: cover; background-position: 60% 30%; }
+.h-kicker { color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: 2px; text-transform: uppercase; }
+.h-label { margin-top: 14px; color: #d9dde2; font-size: 13px; font-weight: 800; letter-spacing: 1.2px; text-transform: uppercase; }
+.h-big { font-family: var(--display); font-weight: 800; text-transform: uppercase; font-size: 46px; line-height: .98; margin-top: 6px; letter-spacing: .01em; }
+.h-big span { color: var(--accent); }
+.h-count { display: inline-flex; align-items: center; gap: 8px; margin-top: 10px; padding: 6px 12px; background: rgba(198,204,214,.14); border: 1px solid rgba(198,204,214,.35); border-radius: var(--r); font-weight: 700; }
+.h-pill { display: inline-flex; align-items: center; gap: 6px; color: #d9dde2; font-size: 14px; }
+.h-again { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 16px; padding: 14px; background: rgba(9,11,13,.7); border: 1px solid var(--line-2); border-radius: var(--r); }
+.h-streak { display: flex; gap: 16px; align-items: center; margin: 4px 16px 0; padding: 16px; background: var(--card); border: 1px solid var(--line-2); border-radius: var(--r); }
+.h-flame { display: flex; flex-direction: column; align-items: center; min-width: 54px; }
+.h-flame b { font-family: var(--display); font-weight: 800; font-size: 34px; line-height: 1; }
+.h-sh { font-family: var(--display); font-weight: 800; font-size: 22px; text-transform: uppercase; }
+.h-week { display: flex; gap: 6px; margin-top: 10px; }
+.h-week button { width: 34px; height: 34px; border-radius: 99px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; background: var(--line); color: var(--muted); text-align: center; }
+.h-week button.booked { background: transparent; border: 2px solid var(--accent); color: var(--accent); }
+.h-week button.done { background: var(--accent); color: var(--accent-ink); }
+.h-week button.today { box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px #f2b84b; }
+.h-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 16px 0; }
+.h-stats div { position: relative; overflow: hidden; background: var(--card); border: 1px solid var(--line-2); border-radius: var(--r); padding: 12px; }
+.h-stats span { display: block; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }
+.h-stats b { display: block; font-family: var(--display); font-weight: 800; font-size: 34px; line-height: 1.05; margin-top: 4px; }
+.h-stats small { color: var(--muted); font-size: 12px; }
+.h-stats i { position: absolute; left: 0; bottom: 0; height: 4px; background: var(--accent); }
+.h-wod { display: block; width: 100%; text-align: left; padding: 16px; background: var(--card); border: 1px solid var(--line-2); border-left: 4px solid var(--accent); border-radius: var(--r); font-size: 16px; line-height: 1.45; }
+.h-wod .hh { font-family: var(--display); font-weight: 800; text-transform: uppercase; font-size: 19px; margin-top: 8px; }
+.h-wod .hh:first-child { margin-top: 0; }
+.h-wod .b { font-weight: 800; }
+.h-wod-f { display: flex; align-items: center; gap: 4px; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); color: var(--accent); font-weight: 700; font-size: 14px; }
+.h-more { color: var(--accent); font-weight: 800; font-size: 12px; text-decoration: none; letter-spacing: 1px; }
+.h-scroll { display: flex; gap: 10px; overflow-x: auto; padding: 4px 16px 6px; scrollbar-width: none; scroll-snap-type: x mandatory; }
+.h-scroll::-webkit-scrollbar { display: none; }
+.h-lift { flex: 0 0 150px; scroll-snap-align: start; text-align: left; padding: 14px; background: var(--card); border: 1px solid var(--line-2); border-radius: var(--r); display: flex; flex-direction: column; gap: 2px; }
+.h-lift span { font-family: var(--display); font-weight: 800; text-transform: uppercase; font-size: 17px; line-height: 1.1; min-height: 38px; }
+.h-lift b { font-family: var(--display); font-weight: 800; font-size: 36px; color: var(--accent); line-height: 1; }
+.h-lift b small { font-size: 16px; color: var(--muted); }
+.h-lift em { font-style: normal; color: var(--muted); font-size: 12px; margin-top: 4px; }
+.h-spot { flex: 0 0 132px; scroll-snap-align: start; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px; padding: 14px 8px; background: var(--card); border: 1px solid var(--line-2); border-radius: var(--r); }
+.h-spot .when { color: var(--muted); font-size: 13px; font-weight: 700; }
+.h-spot .av { position: relative; }
+.h-spot .av i { position: absolute; right: -4px; top: -2px; width: 28px; height: 28px; border-radius: 99px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--card); color: #1b1404; }
+.h-spot .av i.pr { background: #f2b84b; }
+.h-spot .av i.visits { background: #f08a5d; }
+.h-spot .av i.years { background: var(--accent); color: var(--accent-ink); }
+.h-spot b { font-size: 16px; }
+.h-spot .lbl { font-size: 12px; font-weight: 700; padding: 4px 8px; border-radius: 99px; background: var(--band); color: var(--text-2); line-height: 1.25; }
