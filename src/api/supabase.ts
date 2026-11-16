@@ -50,6 +50,8 @@ export function supabaseApi(url: string, key: string): Api {
     cancelClass: (classId, cancel, reason) => rpc('cancel_class', { p_class: classId, p_cancel: cancel, p_reason: reason ?? null }),
     setCoach: (classId, coachId) => rpc('set_class_coach', { p_class: classId, p_coach: coachId }),
     checkIn: (classId, profileId, on) => rpc('check_in', { p_class: classId, p_profile: profileId, p_on: on }),
+    attendees: (c) => rpc('class_attendees', { p_class: c }),
+    selfCheckIn: (c) => rpc('self_check_in', { p_class: c }),
     kioskSignIn: (classId, profileId) => rpc('kiosk_sign_in', { p_class: classId, p_profile: profileId }),
     async staff() {
       return must(await sb.from('profiles').select('*').in('role', ['coach', 'owner']).order('full_name')) as Profile[]

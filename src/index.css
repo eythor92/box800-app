@@ -412,3 +412,12 @@ a { color: var(--accent); }
 .h-lift b { font-family: var(--display); font-weight: 800; font-size: 36px; color: var(--accent); line-height: 1; }
 .h-lift b small { font-size: 16px; color: var(--muted); }
 .h-lift em { font-style: normal; color: var(--muted); font-size: 12px; margin-top: 4px; }
+
+/* Tímaspjald (eins og í Wodify) */
+.sheet.cs { max-height: 92vh; padding-bottom: 0; }
+.cs-row { display: flex; align-items: center; gap: 14px; margin-top: 14px; font-size: 17px; color: var(--text-2); }
+.cs-row > svg { color: var(--muted); flex-shrink: 0; }
+.cs-go { display: inline-flex; align-items: center; gap: 12px; margin-top: 20px; color: var(--accent); font-weight: 800; font-size: 18px; }
+.cs-att { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line-2); font-size: 18px; font-weight: 700; }
+.cs-list { padding-bottom: 8px; }
+.cs-foot { position: sticky; bottom: 0; margin: 0 -20px; padding: 14px 20px calc(18px + env(safe-area-inset-bottom)); background: var(--card-2); border-top: 1px solid var(--line-2); }

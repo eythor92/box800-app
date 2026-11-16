@@ -117,6 +117,21 @@ const [ob] = await q(`select booking_opens_at(c) t, c.starts_at s from classes c
 ok(new Date(ob.s) - new Date(ob.t) === 3600000, 'Afstætt: 60 mín. fyrir tímann');
 await q(`update settings set open_mode = 'fixed'`);
 
+// Biðlisti færist sjálfkrafa inn þar til 10 mín. fyrir tímann
+await as(U.eythor);
+const [w20] = await q(`insert into classes (program_id, starts_at, ends_at, cap) select id, now() + interval '20 minutes', now() + interval '80 minutes', 1 from programs where name = 'Hreysti' returning id`);
+await as(members[0]); await q(`select book_class($1)`, [w20.id]);
+await as(members[1]); ok((await q(`select book_class($1) s`, [w20.id]))[0].s === 'waitlist', '20 mín. fyrir: fullt → biðlisti');
+await as(members[0]); await q(`select cancel_booking($1)`, [w20.id]);
+ok((await q(`select status from bookings where class_id = $1 and profile_id = $2`, [w20.id, await pid(members[1])]))[0].status === 'booked', 'Afbókun 20 mín. fyrir: fyrsti á biðlista fer sjálfkrafa inn');
+
+// Skráðir og innskráning iðkanda sjálfs
+await as(members[2]);
+ok((await q(`select * from class_attendees($1)`, [late.id])).length >= 1, 'Iðkandi sér hverjir eru skráðir');
+await q(`select self_check_in($1)`, [late.id]);
+ok((await q(`select checked_in from class_attendees($1) where is_me`, [late.id]))[0].checked_in === true, 'Iðkandi skráði sig sjálf(ur) inn');
+await expectErr(() => q(`select self_check_in($1)`, [far.id]), '30 mín', 'Ekki hægt að skrá sig inn löngu fyrir tímann');
+
 // Skor
 const [bs] = await q(`select id from movements where name = 'Back Squat'`);
 const [wk] = await q(`select id from workouts limit 1`);

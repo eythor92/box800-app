@@ -158,6 +158,8 @@ export interface Api {
   cancelClass(classId: number, cancel: boolean, reason?: string): Promise<void>
   setCoach(classId: number, coachId: string): Promise<void>
   checkIn(classId: number, profileId: string, on: boolean): Promise<void>
+  attendees(classId: number): Promise<{ profile_id: string; full_name: string; avatar_url: string | null; checked_in: boolean; is_me: boolean }[]>
+  selfCheckIn(classId: number): Promise<void>
   /** Kiosk: skrá inn á stöðinni, líka án bókunar */
   kioskSignIn(classId: number, profileId: string): Promise<void>
   staff(): Promise<Profile[]>

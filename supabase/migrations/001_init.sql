@@ -118,7 +118,7 @@ create table if not exists settings (
   open_time           time not null default '12:00', -- … á þessum tíma (t.d. kl. 12:00 daginn áður)
   open_minutes        int not null default 1230,  -- 'relative': bókanir opna X mín. fyrir tíma
   close_minutes       int not null default 0,     -- bókanir loka X mín. fyrir tíma
-  cancel_minutes      int not null default 30,    -- biðlisti færist sjálfkrafa inn til X mín. fyrir
+  cancel_minutes      int not null default 10,    -- biðlisti færist sjálfkrafa inn til X mín. fyrir
   waitlist_on         boolean not null default true,
   waitlist_mode       text not null default 'auto' check (waitlist_mode in ('auto', 'all')),
   waitlist_limit      int not null default 0,     -- 0 = ekkert hámark
@@ -401,6 +401,30 @@ begin
   where class_id = p_class and profile_id = p_profile and status = 'booked';
 end $$;
 
+-- Hverjir eru skráðir í tímann (nafn og mynd, eins og „Attendees“ í Wodify)
+create or replace function class_attendees(p_class bigint)
+returns table (profile_id uuid, full_name text, avatar_url text, checked_in boolean, is_me boolean)
+language sql stable security definer set search_path = public as $$
+  select b.profile_id, pr.full_name, pr.avatar_url, b.checked_in_at is not null, b.profile_id = me()
+  from bookings b join profiles pr on pr.id = b.profile_id
+  where b.class_id = p_class and b.status = 'booked' and me() is not null
+  order by b.created_at, b.id
+$$;
+
+-- Iðkandi skráir sig sjálfur inn (frá 30 mín. fyrir tímann þar til 30 mín. eftir að hann endar)
+create or replace function self_check_in(p_class bigint) returns void
+language plpgsql security definer set search_path = public as $$
+declare c classes;
+begin
+  select * into c from classes where id = p_class;
+  if not found then raise exception 'Tíminn fannst ekki'; end if;
+  if now() < c.starts_at - interval '30 minutes' then raise exception 'Hægt er að skrá sig inn 30 mín. fyrir tímann'; end if;
+  if now() > c.ends_at + interval '30 minutes' then raise exception 'Tíminn er búinn'; end if;
+  update bookings set checked_in_at = coalesce(checked_in_at, now()), updated_at = now()
+  where class_id = p_class and profile_id = me() and status = 'booked';
+  if not found then raise exception 'Þú ert ekki bókuð/bókaður í þennan tíma'; end if;
+end $$;
+
 -- Kiosk: iðkandi skráir sig inn á stöðinni (líka án bókunar eða af biðlista).
 -- Viðkomandi er mættur, svo hann fær pláss þó tíminn sé fullur.
 create or replace function kiosk_sign_in(p_class bigint, p_profile uuid) returns void
@@ -659,7 +683,7 @@ create policy p_audit_read on audit_log for select to authenticated using (is_st
 -- Föll sem appið má kalla (önnur eru bara notuð innan gagnagrunnsins)
 revoke execute on all functions in schema public from public, anon;
 grant execute on function book_class(bigint, uuid), cancel_booking(bigint, uuid), set_class_cap(bigint, int, text),
-  cancel_class(bigint, boolean, text), set_class_coach(bigint, uuid), check_in(bigint, uuid, boolean), kiosk_sign_in(bigint, uuid),
+  cancel_class(bigint, boolean, text), set_class_coach(bigint, uuid), check_in(bigint, uuid, boolean), kiosk_sign_in(bigint, uuid), class_attendees(bigint), self_check_in(bigint),
   class_list(timestamptz, timestamptz), class_roster(bigint), my_attendance(uuid), member_overview(), me(), my_role(), is_staff(), is_owner(), can_act_for(uuid),
   class_cap(classes), booking_opens_at(classes), has_membership(uuid, int, date), class_label(classes) to authenticated;
 revoke execute on function promote_waitlist(bigint), generate_classes(int), auto_cancel_low(), notify(uuid, text, text, bigint) from authenticated;
