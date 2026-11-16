@@ -1,0 +1,75 @@
+import { useEffect, useState } from 'react'
+import type { Settings } from '../api'
+import { useApp, useData } from '../ctx'
+import { errMsg } from '../util'
+
+function t(m: number) { const x = ((m % 1440) + 1440) % 1440; return `${Math.floor(x / 60)}:${String(x % 60).padStart(2, '0')}` }
+
+export default function AdminSettings() {
+  const { api, toast, refresh } = useApp()
+  const { data } = useData((a) => a.settings())
+  const [s, setS] = useState<Settings | null>(null)
+  useEffect(() => { if (data) setS(data) }, [data])
+  if (!s) return <div className="spinner" />
+  const num = (k: keyof Settings) => (e: React.ChangeEvent<HTMLInputElement>) => setS({ ...s, [k]: Math.max(0, parseInt(e.target.value || '0', 10) || 0) })
+  const cls = 8 * 60 + 30, opens = cls - s.open_minutes
+  const openDay = opens < -1440 ? `${Math.ceil(-opens / 1440)} dögum áður` : opens < 0 ? 'daginn áður' : 'sama dag'
+  const box: React.CSSProperties = { width: 96 }
+
+  return (
+    <>
+      <h1>Bókunarstillingar</h1>
+      <div className="muted" style={{ fontSize: 14 }}>Gilda fyrir alla tíma.</div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 20, marginTop: 22, alignItems: 'flex-start' }}>
+        <div style={{ flex: '999 1 480px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <section className="a-card">
+            <h2 style={{ margin: '0 0 12px', fontSize: 17 }}>Bókanir</h2>
+            <div className="row" style={{ flexWrap: 'wrap' }}><span style={{ minWidth: 170 }}>Bókanir opna</span><input className="input" style={box} type="number" min={0} value={s.open_minutes} onChange={num('open_minutes')} aria-label="Mínútur" /><span>mínútum fyrir tímann</span></div>
+            <div style={{ color: 'var(--accent)', fontSize: 14, margin: '6px 0 0 180px' }}>Fyrir tíma kl. 8:30 opna bókanir {openDay} kl. {t(opens)}.</div>
+            <div className="row" style={{ flexWrap: 'wrap', marginTop: 14 }}><span style={{ minWidth: 170 }}>Bókanir loka</span><input className="input" style={box} type="number" min={0} value={s.close_minutes} onChange={num('close_minutes')} aria-label="Mínútur" /><span>mínútum fyrir tímann</span></div>
+            <div className="row" style={{ flexWrap: 'wrap', marginTop: 14 }}><span style={{ minWidth: 170 }}>Afbókun án refsingar til</span><input className="input" style={box} type="number" min={0} value={s.cancel_minutes} onChange={num('cancel_minutes')} aria-label="Mínútur" /><span>mínútum fyrir tímann</span></div>
+          </section>
+
+          <section className="a-card">
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <h2 style={{ margin: 0, fontSize: 17 }}>Biðlisti</h2>
+              <button className="switch" role="switch" aria-checked={s.waitlist_on} aria-label="Leyfa biðlista" onClick={() => setS({ ...s, waitlist_on: !s.waitlist_on })} />
+            </div>
+            {s.waitlist_on && (
+              <>
+                <div style={{ marginTop: 12, color: '#c3cad1' }}>Þegar pláss losnar:</div>
+                <label className="row" style={{ alignItems: 'flex-start', marginTop: 8, cursor: 'pointer' }}><input type="radio" name="wm" checked={s.waitlist_mode === 'auto'} onChange={() => setS({ ...s, waitlist_mode: 'auto' })} style={{ marginTop: 4, width: 18, height: 18 }} /><span>Fyrsti á biðlista fer <b>sjálfkrafa</b> inn, í réttri röð, þar til <b>{s.cancel_minutes} mín.</b> fyrir tímann. Hann fær tilkynningu.</span></label>
+                <label className="row" style={{ alignItems: 'flex-start', marginTop: 8, cursor: 'pointer' }}><input type="radio" name="wm" checked={s.waitlist_mode === 'all'} onChange={() => setS({ ...s, waitlist_mode: 'all' })} style={{ marginTop: 4, width: 18, height: 18 }} /><span>Allir á biðlista fá tilkynningu og sá fyrsti sem bókar fær plássið.</span></label>
+                <div className="row" style={{ flexWrap: 'wrap', marginTop: 14 }}><span>Hámark á biðlista</span><input className="input" style={box} type="number" min={0} value={s.waitlist_limit} onChange={num('waitlist_limit')} aria-label="Hámark á biðlista" /><span className="muted">0 = ekkert hámark</span></div>
+              </>
+            )}
+          </section>
+
+          <section className="a-card">
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <h2 style={{ margin: 0, fontSize: 17 }}>Aflýsa sjálfkrafa ef fáir eru skráðir</h2>
+              <button className="switch" role="switch" aria-checked={s.auto_cancel_on} aria-label="Aflýsa sjálfkrafa" onClick={() => setS({ ...s, auto_cancel_on: !s.auto_cancel_on })} />
+            </div>
+            {s.auto_cancel_on && (
+              <div className="row" style={{ flexWrap: 'wrap', marginTop: 12 }}>
+                <span>Aflýsa</span><input className="input" style={{ width: 80 }} type="number" min={0} value={s.auto_cancel_minutes} onChange={num('auto_cancel_minutes')} aria-label="Mínútur" />
+                <span>mín. fyrir tímann ef færri en</span><input className="input" style={{ width: 80 }} type="number" min={1} value={s.auto_cancel_min} onChange={num('auto_cancel_min')} aria-label="Fjöldi" /><span>eru skráðir.</span>
+              </div>
+            )}
+          </section>
+          <div><button className="btn btn-primary" onClick={async () => { try { await api.saveSettings(s); toast('Bókunarstillingar vistaðar'); refresh() } catch (e) { toast(errMsg(e)) } }}>Vista stillingar</button></div>
+        </div>
+
+        <aside className="a-card" style={{ flex: '1 1 260px', maxWidth: 340 }}>
+          <div className="label">Dæmi: tími kl. 8:30</div>
+          {[
+            [(opens < 0 ? 'Daginn áður ' : '') + t(opens), 'Bókanir opna'],
+            ['Kvöldið áður 20:00', 'Æfingin birtist í appinu'],
+            [t(cls - s.cancel_minutes), s.waitlist_on && s.waitlist_mode === 'auto' ? 'Síðasti séns að afbóka. Biðlisti hættir að færast sjálfkrafa inn.' : 'Síðasti séns að afbóka án refsingar'],
+            [t(cls - s.close_minutes), (s.close_minutes ? 'Bókanir loka' : 'Bókanir loka þegar tíminn byrjar') + (s.auto_cancel_on ? `. Aflýst ef færri en ${s.auto_cancel_min} eru skráðir.` : '')],
+          ].map(([w, x]) => <div key={w + x} className="row" style={{ alignItems: 'flex-start', marginTop: 12, fontSize: 14 }}><b style={{ minWidth: 120, color: 'var(--accent)' }}>{w}</b><span>{x}</span></div>)}
+        </aside>
+      </div>
+    </>
+  )
+}

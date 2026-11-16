@@ -1,0 +1,81 @@
+import { useCallback, useEffect, useState } from 'react'
+import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { getApi, type Api, type Profile } from './api'
+import { AppCtx, useToast } from './ctx'
+import Login from './pages/Login'
+import MobileShell from './pages/MobileShell'
+import Home from './pages/Home'
+import Schedule from './pages/Schedule'
+import WorkoutView from './pages/WorkoutView'
+import Attendance from './pages/Attendance'
+import CoachClasses from './pages/CoachClasses'
+import CoachClass from './pages/CoachClass'
+import AdminShell from './admin/AdminShell'
+import AdminWorkouts from './admin/AdminWorkouts'
+import AdminClasses from './admin/AdminClasses'
+import AdminSettings from './admin/AdminSettings'
+import AdminMembers from './admin/AdminMembers'
+
+export default function App() {
+  const [api, setApi] = useState<Api | null>(null)
+  const [me, setMe] = useState<Profile | null | undefined>(undefined)
+  const [tick, setTick] = useState(0)
+  const [fatal, setFatal] = useState<string | null>(null)
+  const { msg, toast } = useToast()
+
+  const loadMe = useCallback(async (a: Api) => {
+    const s = await a.session()
+    setMe(s ? await a.myProfile() : null)
+  }, [])
+
+  useEffect(() => {
+    getApi().then((a) => { setApi(a); loadMe(a).catch((e) => setFatal(String(e.message ?? e))) }, (e) => setFatal(String(e?.message ?? e)))
+  }, [loadMe])
+
+  useEffect(() => {
+    if (!api) return
+    const off = api.onAuthChange(() => { loadMe(api) })
+    return off
+  }, [api, loadMe])
+
+  useEffect(() => {
+    if (!api || !me) return
+    return api.subscribe(() => setTick((t) => t + 1))
+  }, [api, me])
+
+  if (fatal) return <div className="auth"><div className="error">Villa: {fatal}</div></div>
+  if (!api || me === undefined) return <div className="auth"><div><img src="myndir/logo-white.png" alt="BOX800" style={{ height: 60, display: 'block', margin: '0 auto' }} /><div className="spinner" /></div></div>
+  if (!me) return <>{<Login api={api} />}{msg && <div className="toast" role="status">{msg}</div>}</>
+
+  const staff = me.role !== 'member'
+  const owner = me.role === 'owner'
+
+  return (
+    <AppCtx.Provider value={{ api, me, tick, refresh: () => setTick((t) => t + 1), toast }}>
+      <HashRouter>
+        <Routes>
+          <Route element={<MobileShell />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/timatafla" element={<Schedule />} />
+            <Route path="/aefing" element={<WorkoutView />} />
+            <Route path="/maeting" element={<Attendance />} />
+            {staff && <Route path="/thjalfari" element={<CoachClasses />} />}
+            {staff && <Route path="/thjalfari/aefing" element={<WorkoutView coach />} />}
+            {staff && <Route path="/thjalfari/timi/:id" element={<CoachClass />} />}
+          </Route>
+          {owner && (
+            <Route path="/stjorn" element={<AdminShell />}>
+              <Route index element={<Navigate to="aefingar" replace />} />
+              <Route path="aefingar" element={<AdminWorkouts />} />
+              <Route path="timar" element={<AdminClasses />} />
+              <Route path="stillingar" element={<AdminSettings />} />
+              <Route path="idkendur" element={<AdminMembers />} />
+            </Route>
+          )}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </HashRouter>
+      {msg && <div className="toast" role="status">{msg}</div>}
+    </AppCtx.Provider>
+  )
+}

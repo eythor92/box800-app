@@ -1,0 +1,144 @@
+export type Role = 'member' | 'coach' | 'owner'
+
+export interface Profile {
+  id: string
+  full_name: string
+  email: string | null
+  phone: string | null
+  role: Role
+  avatar_url: string | null
+  note?: string | null
+}
+
+export interface ClassRow {
+  id: number
+  program_id: number
+  program: string
+  color: string
+  starts_at: string
+  ends_at: string
+  coach_id: string | null
+  coach_name: string | null
+  coach_avatar: string | null
+  cap: number
+  booked: number
+  waiting: number
+  cancelled: boolean
+  my_status: 'booked' | 'waitlist' | 'cancelled' | 'late_cancel' | 'no_show' | null
+  my_position: number | null
+  slot_id: number | null
+}
+
+export interface RosterRow {
+  profile_id: string
+  full_name: string
+  avatar_url: string | null
+  status: 'booked' | 'waitlist'
+  checked_in: boolean
+  wait_pos: number | null
+  note: string | null
+  first_class: boolean
+  plan: string | null
+}
+
+export interface Program { id: number; name: string; color: string; default_cap: number; sort: number }
+
+export type ComponentType = 'metcon' | 'header' | 'lift' | 'video' | 'image'
+export interface WorkoutComponent {
+  type: ComponentType
+  prefix?: string
+  title?: string
+  body?: string
+  comment?: string
+  scoring?: string
+  rounds?: number
+  scaling?: string
+  url?: string
+}
+export interface Workout {
+  id?: number
+  program_id: number
+  day: string
+  components: WorkoutComponent[]
+  status: 'draft' | 'published'
+  publish_mode: 'evening_before' | 'now' | 'morning'
+  publish_at?: string | null
+}
+
+export interface Settings {
+  open_minutes: number
+  close_minutes: number
+  cancel_minutes: number
+  waitlist_on: boolean
+  waitlist_mode: 'auto' | 'all'
+  waitlist_limit: number
+  auto_cancel_on: boolean
+  auto_cancel_minutes: number
+  auto_cancel_min: number
+}
+
+export interface MemberRow {
+  id: string
+  full_name: string
+  email: string | null
+  phone: string | null
+  role: Role
+  is_dependent: boolean
+  created_at: string
+  plan: string | null
+  ends_on: string | null
+  membership_status: string | null
+  last_class: string | null
+  visits_30: number
+  total: number
+  note: string | null
+}
+
+export interface Notification { id: number; title: string; body: string | null; created_at: string; read_at: string | null }
+export interface Attendance { class_id: number; program: string; starts_at: string; checked_in: boolean }
+
+export interface NewMember {
+  full_name: string
+  email: string
+  phone?: string
+  kennitala?: string
+  note?: string
+  emergency?: string
+  is_dependent?: boolean
+}
+
+export interface Api {
+  demo: boolean
+  // innskráning
+  session(): Promise<string | null>
+  onAuthChange(cb: () => void): () => void
+  signIn(email: string, password: string): Promise<void>
+  signUp(email: string, password: string, fullName: string): Promise<'confirm' | 'ok'>
+  resetPassword(email: string): Promise<void>
+  signOut(): Promise<void>
+  demoUsers?(): { label: string; email: string }[]
+  // gögn
+  myProfile(): Promise<Profile | null>
+  classList(from: Date, to: Date): Promise<ClassRow[]>
+  book(classId: number, profileId?: string): Promise<string>
+  cancelBooking(classId: number, profileId?: string): Promise<string>
+  roster(classId: number): Promise<RosterRow[]>
+  setCap(classId: number, cap: number, scope: 'one' | 'all'): Promise<number>
+  cancelClass(classId: number, cancel: boolean, reason?: string): Promise<void>
+  setCoach(classId: number, coachId: string): Promise<void>
+  checkIn(classId: number, profileId: string, on: boolean): Promise<void>
+  staff(): Promise<Profile[]>
+  programs(): Promise<Program[]>
+  updateProgramCap(id: number, cap: number): Promise<void>
+  workouts(from: string, to: string): Promise<Workout[]>
+  saveWorkout(w: Workout): Promise<void>
+  settings(): Promise<Settings>
+  saveSettings(s: Settings): Promise<void>
+  members(): Promise<MemberRow[]>
+  createMember(m: NewMember): Promise<void>
+  searchProfiles(q: string): Promise<Profile[]>
+  myAttendance(): Promise<Attendance[]>
+  notifications(): Promise<Notification[]>
+  markNotificationsRead(): Promise<void>
+  subscribe(cb: () => void): () => void
+}

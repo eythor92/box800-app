@@ -1,0 +1,112 @@
+// Sýniútgáfa: keyrir NÁKVÆMLEGA sama gagnagrunn og reglur og Supabase,
+// en í vafranum (PGlite). Notað til að prófa áður en Supabase er tengt.
+import { PGlite } from '@electric-sql/pglite'
+import initSql from '../../supabase/migrations/001_init.sql?raw'
+import seedSql from '../../supabase/migrations/002_seed.sql?raw'
+import demoSql from '../../supabase/demo/demo_seed.sql?raw'
+import type { Api, Profile, Settings, Workout } from './types'
+
+const USERS = [
+  { label: 'Eyþór (eigandi)', email: 'eigandi@box800.demo', id: '00000000-0000-0000-0000-000000000001' },
+  { label: 'Alda (þjálfari)', email: 'alda@box800.demo', id: '00000000-0000-0000-0000-000000000002' },
+  { label: 'Sigrún (iðkandi)', email: 'idkandi@box800.demo', id: '00000000-0000-0000-0000-000000000003' },
+]
+
+export async function demoApi(): Promise<Api> {
+  const db = new PGlite()
+  await db.exec(`
+    create role anon; create role authenticated;
+    create schema auth;
+    create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb default '{}');
+    create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+  `)
+  await db.exec(initSql)
+  await db.exec(seedSql)
+  await db.exec(demoSql)
+
+  let current: string | null = sessionStorageGet()
+  const listeners = new Set<() => void>()
+  const changed = () => listeners.forEach((f) => f())
+  const auth = async () => db.query(`select set_config('request.jwt.claim.sub', $1, false)`, [current ?? ''])
+
+  // Raðar köllum svo notandi (jwt) blandist aldrei saman
+  let chain: Promise<unknown> = Promise.resolve()
+  const run = <T>(fn: () => Promise<T>): Promise<T> => {
+    const p = chain.then(async () => { await auth(); return fn() })
+    chain = p.catch(() => undefined)
+    return p
+  }
+  const rows = <T>(sql: string, params: unknown[] = []) =>
+    run(async () => {
+      try { return (await db.query(sql, params)).rows.map(norm) as T[] } catch (e) { throw new Error((e as Error).message) }
+    })
+  const one = async <T>(sql: string, params: unknown[] = []) => (await rows<T>(sql, params))[0]
+  const write = async (sql: string, params: unknown[] = []) => { await rows(sql, params); changed() }
+  const val = async <T>(sql: string, params: unknown[] = []) => {
+    const r = await one<Record<string, T>>(sql, params)
+    changed()
+    return Object.values(r)[0]
+  }
+
+  return {
+    demo: true,
+    demoUsers: () => USERS.map(({ label, email }) => ({ label, email })),
+    async session() { return current },
+    onAuthChange(cb) { const f = () => cb(); authListeners.add(f); return () => authListeners.delete(f) },
+    async signIn(email) {
+      const u = USERS.find((x) => x.email === email)
+      if (!u) throw new Error('Í prófunarútgáfu: veldu einn af prófunarnotendunum')
+      current = u.id; sessionStorageSet(current); authListeners.forEach((f) => f())
+    },
+    async signUp() { throw new Error('Nýskráning virkar þegar Supabase er tengt') },
+    async resetPassword() { throw new Error('Virkar þegar Supabase er tengt') },
+    async signOut() { current = null; sessionStorageSet(null); authListeners.forEach((f) => f()) },
+
+    myProfile: () => one<Profile>(`select * from profiles where auth_id = auth.uid()`),
+    classList: (from, to) => rows(`select * from class_list($1, $2)`, [from.toISOString(), to.toISOString()]),
+    book: (c, p) => val(`select book_class($1, $2)`, [c, p ?? null]),
+    cancelBooking: (c, p) => val(`select cancel_booking($1, $2)`, [c, p ?? null]),
+    roster: (c) => rows(`select * from class_roster($1)`, [c]),
+    setCap: (c, cap, scope) => val(`select set_class_cap($1, $2, $3)`, [c, cap, scope]),
+    cancelClass: async (c, cancel, reason) => { await write(`select cancel_class($1, $2, $3)`, [c, cancel, reason ?? null]) },
+    setCoach: async (c, coach) => { await write(`select set_class_coach($1, $2)`, [c, coach]) },
+    checkIn: async (c, p, on) => { await write(`select check_in($1, $2, $3)`, [c, p, on]) },
+    staff: () => rows<Profile>(`select * from profiles where role in ('coach','owner') order by full_name`),
+    programs: () => rows(`select * from programs where active order by sort`),
+    updateProgramCap: async (id, cap) => { await write(`update programs set default_cap = $2 where id = $1`, [id, cap]) },
+    workouts: (from, to) => rows<Workout>(
+      `select id, program_id, to_char(day, 'YYYY-MM-DD') as day, components, status, publish_mode, publish_at from workouts
+       where day between $1 and $2 and (is_staff() or (status = 'published' and publish_at <= now()))`, [from, to]),
+    saveWorkout: async (w) => {
+      await write(`insert into workouts (program_id, day, components, status, publish_mode) values ($1, $2, $3, $4, $5)
+        on conflict (program_id, day) do update set components = excluded.components, status = excluded.status, publish_mode = excluded.publish_mode`,
+        [w.program_id, w.day, JSON.stringify(w.components), w.status, w.publish_mode])
+    },
+    settings: () => one<Settings>(`select * from settings where id = 1`),
+    saveSettings: async (s) => {
+      await write(`update settings set open_minutes=$1, close_minutes=$2, cancel_minutes=$3, waitlist_on=$4, waitlist_mode=$5,
+        waitlist_limit=$6, auto_cancel_on=$7, auto_cancel_minutes=$8, auto_cancel_min=$9 where id = 1`,
+        [s.open_minutes, s.close_minutes, s.cancel_minutes, s.waitlist_on, s.waitlist_mode, s.waitlist_limit, s.auto_cancel_on, s.auto_cancel_minutes, s.auto_cancel_min])
+    },
+    members: () => rows(`select * from member_overview()`),
+    createMember: async (m) => {
+      await write(`insert into profiles (full_name, email, phone, kennitala, note, emergency, is_dependent) values ($1, lower($2), $3, $4, $5, $6, $7)`,
+        [m.full_name, m.email, m.phone ?? null, m.kennitala ?? null, m.note ?? null, m.emergency ?? null, !!m.is_dependent])
+    },
+    searchProfiles: (q) => rows<Profile>(`select * from profiles where full_name ilike $1 order by full_name limit 8`, ['%' + q + '%']),
+    myAttendance: () => rows(`select * from my_attendance()`),
+    notifications: () => rows(`select * from notifications where profile_id = me() order by created_at desc limit 40`),
+    markNotificationsRead: async () => { await write(`update notifications set read_at = now() where profile_id = me() and read_at is null`) },
+    subscribe(cb) { listeners.add(cb); return () => listeners.delete(cb) },
+  }
+}
+
+const authListeners = new Set<() => void>()
+// PGlite skilar Date-hlutum; Supabase skilar ISO-strengjum. Samræmum.
+function norm(r: unknown): unknown {
+  const o = r as Record<string, unknown>
+  for (const k in o) if (o[k] instanceof Date) o[k] = (o[k] as Date).toISOString()
+  return o
+}
+function sessionStorageGet(): string | null { try { return sessionStorage.getItem('box800-demo-user') } catch { return null } }
+function sessionStorageSet(v: string | null) { try { if (v) sessionStorage.setItem('box800-demo-user', v); else sessionStorage.removeItem('box800-demo-user') } catch { /* ekkert */ } }

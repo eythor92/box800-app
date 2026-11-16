@@ -1,0 +1,110 @@
+// Prófar gagnagrunninn í PGlite (Postgres í minni) – engin tenging við Supabase
+import { PGlite } from '@electric-sql/pglite';
+import fs from 'node:fs';
+const dir = new URL('../migrations/', import.meta.url);
+const db = new PGlite();
+const q = (s, p) => db.query(s, p).then(r => r.rows);
+let fails = 0;
+const ok = (cond, msg) => { console.log((cond ? '  ✓ ' : '  ✗ ') + msg); if (!cond) fails++; };
+const as = async (authId) => db.exec(`select set_config('request.jwt.claim.sub', '${authId || ''}', false)`);
+const expectErr = async (fn, txt, msg) => { try { await fn(); ok(false, msg + ' (engin villa)'); } catch (e) { ok(e.message.includes(txt), msg + ' → ' + e.message); } };
+
+await db.exec(`
+  create role anon; create role authenticated;
+  create schema auth;
+  create table auth.users (id uuid primary key, email text, raw_user_meta_data jsonb default '{}');
+  create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
+`);
+try { await db.exec(fs.readFileSync(new URL('001_init.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 001:', e.message, e.position); process.exit(1); }
+await db.exec(fs.readFileSync(new URL('002_seed.sql', dir), 'utf8'));
+console.log('Uppsetning tókst');
+
+// Notendur
+const U = { eythor: '00000000-0000-0000-0000-000000000001', alda: '00000000-0000-0000-0000-000000000002' };
+const members = [];
+await q(`insert into profiles (full_name, email, wodify_id) values ('Sigrún Wodify', 'sigrun@test.is', 42)`);
+await q(`insert into auth.users (id, email) values ($1, 'eythor@test.is'), ($2, 'alda@test.is')`, [U.eythor, U.alda]);
+await q(`update profiles set role = 'owner', full_name = 'Eyþór' where auth_id = $1`, [U.eythor]);
+await q(`update profiles set role = 'coach', full_name = 'Alda' where auth_id = $1`, [U.alda]);
+for (let i = 0; i < 6; i++) {
+  const id = `10000000-0000-0000-0000-00000000000${i}`;
+  await q(`insert into auth.users (id, email) values ($1, $2)`, [id, i === 0 ? 'SIGRUN@test.is' : `m${i}@test.is`]);
+  members.push(id);
+}
+const linked = await q(`select full_name, auth_id from profiles where wodify_id = 42`);
+ok(linked[0].auth_id === members[0], 'Nýr notandi tengist prófíl úr Wodify með sama netfangi (óháð há/lágstöfum)');
+const pid = async (a) => (await q(`select id from profiles where auth_id = $1`, [a]))[0].id;
+
+// Áskrift fyrir alla nema m5
+for (let i = 0; i < 5; i++) await q(`insert into memberships (profile_id, plan) values ($1, '12 mánaða samningur')`, [await pid(members[i])]);
+
+const n = (await q(`select count(*)::int c from classes`))[0].c;
+ok(n > 150, `generate_classes bjó til ${n} tíma`);
+
+// Tími á morgun kl. 16:30 sem er ekki of langt fram í tímann: búum til tíma eftir 10 klst. með hámarki 2
+const [cls] = await q(`insert into classes (program_id, starts_at, ends_at, cap) select id, now() + interval '10 hours', now() + interval '11 hours', 2 from programs where name = 'Hreysti' returning id`);
+const C = cls.id;
+
+await as(members[0]); ok(await q(`select book_class($1) s`, [C]).then(r => r[0].s) === 'booked', 'm0 bókar → booked');
+await as(members[1]); ok(await q(`select book_class($1) s`, [C]).then(r => r[0].s) === 'booked', 'm1 bókar → booked (fullt núna)');
+await as(members[2]); ok(await q(`select book_class($1) s`, [C]).then(r => r[0].s) === 'waitlist', 'm2 → biðlisti');
+await as(members[3]); ok(await q(`select book_class($1) s`, [C]).then(r => r[0].s) === 'waitlist', 'm3 → biðlisti');
+await as(members[5]); await expectErr(() => q(`select book_class($1)`, [C]), 'áskrift', 'm5 án áskriftar fær ekki að bóka');
+
+await as(members[3]);
+let list = await q(`select booked, waiting, my_status, my_position, cap from class_list(now(), now() + interval '1 day') where id = $1`, [C]);
+ok(list[0].booked === 2 && list[0].waiting === 2 && list[0].my_position === 2, 'class_list: 2 skráðir, 2 á biðlista, m3 er nr. 2');
+
+await as(members[0]); await q(`select cancel_booking($1)`, [C]);
+const st = async (i) => (await q(`select status from bookings where class_id = $1 and profile_id = $2`, [C, await pid(members[i])]))[0]?.status;
+ok(await st(0) === 'cancelled' && await st(2) === 'booked' && await st(3) === 'waitlist', 'm0 afbókar → m2 (fyrst á biðlista) fer sjálfkrafa inn');
+const notif = await q(`select title from notifications where profile_id = $1`, [await pid(members[2])]);
+ok(notif.length === 1 && notif[0].title.includes('fékkst pláss'), 'm2 fær tilkynningu: ' + notif[0]?.title);
+
+await as(members[0]); ok(await q(`select book_class($1) s`, [C]).then(r => r[0].s) === 'waitlist', 'm0 bókar aftur → aftast á biðlista (á eftir m3)');
+
+await as(members[4]); await expectErr(() => q(`select set_class_cap($1, 5)`, [C]), 'þjálfar', 'Iðkandi má ekki breyta hámarki');
+await as(U.alda); const prom = await q(`select set_class_cap($1, 4) n`, [C]);
+ok(prom[0].n === 2 && await st(3) === 'booked' && await st(0) === 'booked', 'Þjálfari hækkar hámark í 4 → 2 fara sjálfkrafa inn af biðlista');
+
+await as(U.alda); await q(`select cancel_booking($1, $2)`, [C, await pid(members[1])]);
+ok(await st(1) === 'cancelled', 'Þjálfari afskráir iðkanda');
+await as(U.alda); ok(await q(`select book_class($1, $2) s`, [C, await pid(members[5])]).then(r => r[0].s) === 'booked', 'Þjálfari bætir við iðkanda án áskriftar (má)');
+
+const roster = await q(`select full_name, status from class_roster($1)`, [C]);
+ok(roster.length === 4, 'Nafnalisti sýnir 4 skráða');
+await as(members[4]); ok((await q(`select * from class_roster($1)`, [C])).length === 0, 'Iðkandi sér ekki nafnalista');
+
+// Afbókun of seint
+const [late] = await q(`insert into classes (program_id, starts_at, ends_at) select id, now() + interval '10 minutes', now() + interval '1 hour' from programs where name = 'Hreysti' returning id`);
+await as(U.alda); await q(`select book_class($1, $2)`, [late.id, await pid(members[4])]);
+await as(members[4]); ok(await q(`select cancel_booking($1) s`, [late.id]).then(r => r[0].s) === 'late_cancel', 'Afbókun innan 30 mín. → late_cancel');
+
+// Síðustu 30 mín.: laust pláss fer til þess sem bókar, þó aðrir bíði
+await q(`insert into bookings (class_id, profile_id, status, waitlist_at) values ($1, $2, 'waitlist', now())`, [late.id, await pid(members[3])]);
+await as(members[2]); ok(await q(`select book_class($1) s`, [late.id]).then(r => r[0].s) === 'booked', 'Innan 30 mín.: laust pláss bókast beint');
+
+// Bókanir ekki opnar
+const [far] = await q(`insert into classes (program_id, starts_at, ends_at) select id, now() + interval '3 days', now() + interval '3 days 1 hour' from programs where name = 'Hreysti' returning id`);
+await as(members[4]); await expectErr(() => q(`select book_class($1)`, [far.id]), 'ekki opnar', 'Ekki hægt að bóka 3 dögum fyrir (opnar 1230 mín. fyrir)');
+
+// Aflýsa tíma
+await as(U.alda); await q(`select cancel_class($1, true, 'Veikindi')`, [C]);
+const cn = await q(`select count(*)::int c from notifications where class_id = $1 and title like '%aflýst%'`, [C]);
+ok(cn[0].c >= 4, `Aflýsing: ${cn[0].c} fengu tilkynningu`);
+await as(members[4]); await expectErr(() => q(`select book_class($1)`, [C]), 'aflýst', 'Ekki hægt að bóka aflýstan tíma');
+
+// Æfingar: birtast kl. 20 kvöldið áður
+await as(U.eythor);
+await q(`insert into workouts (program_id, day, components, status) select id, current_date + 1, '[]', 'published' from programs where name = 'Hreysti'`);
+const w = await q(`select publish_at at time zone 'Atlantic/Reykjavik' t from workouts`);
+ok(String(w[0].t).includes('20:00') || new Date(w[0].t).getUTCHours() === 20, 'Æfing birtist kl. 20:00 kvöldið áður: ' + w[0].t);
+
+// Hlutverk
+await as(members[4]); await q(`update profiles set role = 'owner' where auth_id = $1`, [members[4]]);
+ok((await q(`select role from profiles where auth_id = $1`, [members[4]]))[0].role === 'member', 'Iðkandi getur ekki gert sig að eiganda');
+
+await as(U.eythor); const ov = await q(`select * from member_overview()`); ok(ov.length >= 8, 'member_overview: ' + ov.length + ' prófílar');
+await as(members[4]); ok((await q(`select * from member_overview()`)).length === 0, 'Iðkandi sér ekki iðkendalista');
+console.log(fails ? `\n${fails} próf féllu` : '\nÖll próf stóðust');
+process.exit(fails ? 1 : 0);
