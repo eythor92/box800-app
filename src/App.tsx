@@ -15,6 +15,8 @@ import AdminWorkouts from './admin/AdminWorkouts'
 import AdminClasses from './admin/AdminClasses'
 import AdminSettings from './admin/AdminSettings'
 import AdminMembers from './admin/AdminMembers'
+import KioskCheckin from './kiosk/KioskCheckin'
+import KioskTv from './kiosk/KioskTv'
 
 export default function App() {
   const [api, setApi] = useState<Api | null>(null)
@@ -63,6 +65,8 @@ export default function App() {
             {staff && <Route path="/thjalfari/aefing" element={<WorkoutView coach />} />}
             {staff && <Route path="/thjalfari/timi/:id" element={<CoachClass />} />}
           </Route>
+          {staff && <Route path="/kiosk" element={<KioskCheckin />} />}
+          {staff && <Route path="/kiosk/sjonvarp" element={<KioskTv />} />}
           {owner && (
             <Route path="/stjorn" element={<AdminShell />}>
               <Route index element={<Navigate to="aefingar" replace />} />

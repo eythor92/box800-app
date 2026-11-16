@@ -127,6 +127,8 @@ export interface Api {
   cancelClass(classId: number, cancel: boolean, reason?: string): Promise<void>
   setCoach(classId: number, coachId: string): Promise<void>
   checkIn(classId: number, profileId: string, on: boolean): Promise<void>
+  /** Kiosk: skrá inn á stöðinni, líka án bókunar */
+  kioskSignIn(classId: number, profileId: string): Promise<void>
   staff(): Promise<Profile[]>
   programs(): Promise<Program[]>
   updateProgramCap(id: number, cap: number): Promise<void>

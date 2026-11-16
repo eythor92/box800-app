@@ -389,6 +389,23 @@ begin
   where class_id = p_class and profile_id = p_profile and status = 'booked';
 end $$;
 
+-- Kiosk: iðkandi skráir sig inn á stöðinni (líka án bókunar eða af biðlista).
+-- Viðkomandi er mættur, svo hann fær pláss þó tíminn sé fullur.
+create or replace function kiosk_sign_in(p_class bigint, p_profile uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare c classes;
+begin
+  if not is_staff() then raise exception 'Aðeins þjálfarar'; end if;
+  select * into c from classes where id = p_class for update;
+  if not found then raise exception 'Tíminn fannst ekki'; end if;
+  if c.cancelled_at is not null then raise exception 'Tímanum hefur verið aflýst'; end if;
+  insert into bookings (class_id, profile_id, status, checked_in_at)
+  values (p_class, p_profile, 'booked', now())
+  on conflict (class_id, profile_id) do update
+    set status = 'booked', waitlist_at = null, updated_at = now(),
+        checked_in_at = coalesce(bookings.checked_in_at, now());
+end $$;
+
 -- ---------------------------------------------------------------------
 -- Tímatafla fyrir appið: tímar + fjöldi + mín staða, í einu kalli
 -- ---------------------------------------------------------------------
@@ -630,7 +647,7 @@ create policy p_audit_read on audit_log for select to authenticated using (is_st
 -- Föll sem appið má kalla (önnur eru bara notuð innan gagnagrunnsins)
 revoke execute on all functions in schema public from public, anon;
 grant execute on function book_class(bigint, uuid), cancel_booking(bigint, uuid), set_class_cap(bigint, int, text),
-  cancel_class(bigint, boolean, text), set_class_coach(bigint, uuid), check_in(bigint, uuid, boolean),
+  cancel_class(bigint, boolean, text), set_class_coach(bigint, uuid), check_in(bigint, uuid, boolean), kiosk_sign_in(bigint, uuid),
   class_list(timestamptz, timestamptz), class_roster(bigint), my_attendance(uuid), member_overview(), me(), my_role(), is_staff(), is_owner(), can_act_for(uuid),
   class_cap(classes), has_membership(uuid, int, date), class_label(classes) to authenticated;
 revoke execute on function promote_waitlist(bigint), generate_classes(int), auto_cancel_low(), notify(uuid, text, text, bigint) from authenticated;

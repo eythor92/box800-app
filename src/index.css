@@ -229,3 +229,68 @@ a { color: var(--accent); }
   linear-gradient(90deg, rgba(4,6,8,.94) 0%, rgba(4,6,8,.8) 50%, rgba(4,6,8,.55) 100%),
   url('./assets/forsida.webp') 65% center / cover no-repeat, var(--bg); }
 .toast { background: var(--accent); color: var(--accent-ink); }
+
+/* ==========================================
+   KIOSK: innskráning á stöðinni og sjónvarp
+   ========================================== */
+.kiosk { height: 100vh; height: 100dvh; display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
+.k-top { display: flex; align-items: center; gap: 14px; padding: 10px 16px; border-bottom: 1px solid var(--line-2); background: var(--bg-deep); }
+.k-logo { height: 36px; flex-shrink: 0; }
+.k-day { min-width: 92px; text-align: center; font-family: var(--display); font-weight: 800; font-size: 20px; text-transform: uppercase; }
+.k-tabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+.k-tabs::-webkit-scrollbar { display: none; }
+.k-tabs button { flex-shrink: 0; display: flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: var(--r); border: 1px solid var(--line-2); color: var(--text-2); }
+.k-tabs button b { display: block; font-size: 16px; }
+.k-tabs button small { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: var(--muted); }
+.k-tabs button.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.k-tabs button.on small { color: #3a4048; }
+.k-main { flex: 1; min-height: 0; display: grid; grid-template-columns: 340px minmax(0, 1fr); }
+.k-main.with-w { grid-template-columns: 340px minmax(0, 1fr) minmax(0, 0.9fr); }
+.k-side { border-right: 1px solid var(--line-2); padding: 16px; overflow-y: auto; background: var(--card); }
+.k-search { display: flex; align-items: center; gap: 8px; margin-top: 8px; height: 52px; padding: 0 12px; border: 1px solid var(--line-2); border-radius: var(--r); background: #0f1215; }
+.k-search:focus-within { border-color: var(--accent); }
+.k-search input { flex: 1; min-width: 0; height: 100%; border: 0; background: none; outline: none; font-size: 18px; }
+.k-hits { margin-top: 6px; border: 1px solid var(--line-2); border-radius: var(--r); background: var(--card-2); }
+.k-hits button { width: 100%; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--line); font-weight: 600; font-size: 16px; }
+.k-hits button:first-child { border-top: 0; }
+.k-list { margin-top: 6px; }
+.k-list button { width: 100%; display: flex; align-items: center; gap: 10px; min-height: 50px; padding: 6px 2px; border-bottom: 1px solid var(--line); font-weight: 600; }
+.k-list .n { width: 22px; color: var(--muted); font-size: 13px; text-align: right; flex-shrink: 0; }
+.k-check { width: 26px; height: 26px; border-radius: 99px; border: 2px solid var(--line-2); display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.k-check.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.k-center { padding: 18px 20px; overflow-y: auto; }
+.k-title { display: flex; align-items: center; gap: 12px; font-family: var(--display); font-weight: 800; font-size: 32px; text-transform: uppercase; margin-bottom: 16px; }
+.k-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.k-card { border: 1px solid var(--line-2); border-radius: var(--r); overflow: hidden; background: var(--card); }
+.k-card img, .k-card .ph { width: 100%; aspect-ratio: 1; object-fit: cover; display: flex; align-items: center; justify-content: center; background: #1f2429; font-family: var(--display); font-weight: 800; font-size: 54px; color: var(--accent); }
+.k-card .nm { padding: 8px 10px; font-weight: 700; font-size: 15px; line-height: 1.25; }
+.k-empty { border: 1px dashed var(--line-2); border-radius: var(--r); padding: 40px 24px; text-align: center; color: var(--muted); font-size: 20px; }
+.k-workout { border-left: 1px solid var(--line-2); padding: 18px 20px; min-height: 0; display: flex; }
+
+.bigw { flex: 1; min-height: 0; width: 100%; height: 100%; overflow: hidden; line-height: 1.28; }
+.bigw-title { font-family: var(--display); font-weight: 800; text-transform: uppercase; font-size: 1.15em; letter-spacing: .015em; margin-bottom: .5em; padding-bottom: .3em; border-bottom: 1px solid var(--line-2); }
+.bigw-sec { font-family: var(--display); font-weight: 800; text-transform: uppercase; color: var(--accent); letter-spacing: .08em; font-size: .7em; margin: .7em 0 .2em; break-after: avoid; }
+.bigw-part { break-inside: avoid; margin-bottom: .75em; }
+.bigw-h { font-family: var(--display); font-weight: 800; text-transform: uppercase; font-size: 1.12em; color: var(--accent); margin-bottom: .1em; letter-spacing: .015em; }
+.bigw-part .b { font-weight: 800; }
+.bigw-note { font-style: italic; color: var(--muted); font-size: .8em; margin-top: .2em; }
+
+.kiosk-tv { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
+.tv-top { display: flex; align-items: center; gap: 2vmin; padding: 1.6vmin 3vmin; border-bottom: 1px solid var(--line-2); }
+.tv-top img { height: 5vmin; }
+.tv-next { color: var(--muted); font-weight: 700; font-size: 2.2vmin; text-transform: uppercase; letter-spacing: .1em; }
+.tv-clock { margin-left: auto; font-family: var(--display); font-weight: 800; font-size: 4.2vmin; }
+.tv-body { flex: 1; min-height: 0; display: flex; padding: 3vmin 4vmin; }
+.tv-empty { margin: auto; text-align: center; }
+.tv-bar { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(9,11,13,.96); border: 1px solid var(--line-2); border-radius: var(--r); max-width: calc(100% - 24px); }
+.tv-bar .select { width: auto; height: 38px; }
+
+@media (max-width: 1000px) {
+  .k-main, .k-main.with-w { grid-template-columns: 300px minmax(0, 1fr); }
+  .k-workout { display: none; }
+}
+@media (max-width: 640px) {
+  .k-main, .k-main.with-w { grid-template-columns: 1fr; overflow-y: auto; }
+  .k-side { border-right: 0; }
+  .k-top { flex-wrap: wrap; }
+}

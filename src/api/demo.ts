@@ -73,6 +73,7 @@ export async function demoApi(): Promise<Api> {
     cancelClass: async (c, cancel, reason) => { await write(`select cancel_class($1, $2, $3)`, [c, cancel, reason ?? null]) },
     setCoach: async (c, coach) => { await write(`select set_class_coach($1, $2)`, [c, coach]) },
     checkIn: async (c, p, on) => { await write(`select check_in($1, $2, $3)`, [c, p, on]) },
+    kioskSignIn: async (c, p) => { await write(`select kiosk_sign_in($1, $2)`, [c, p]) },
     staff: () => rows<Profile>(`select * from profiles where role in ('coach','owner') order by full_name`),
     programs: () => rows(`select * from programs where active order by sort`),
     updateProgramCap: async (id, cap) => { await write(`update programs set default_cap = $2 where id = $1`, [id, cap]) },
