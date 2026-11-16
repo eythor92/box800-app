@@ -59,7 +59,7 @@ export function PanelSettings({ cfg, day, programs, autoName, onApply, onClose, 
   const [open, setOpen] = useState<string | null>(startOpen ?? (cfg.type === 'workout' ? 'prog' : null))
   const tog = (s: string) => setOpen(open === s ? null : s)
   const pname = d.prog ? programs.find((p) => p.id === d.prog)?.name : `Sjálfvirkt${autoName ? ' (' + autoName + ')' : ''}`
-  const dayText = d.autoDay ? 'Sjálfvirkt (í dag, morgundagur eftir kl. 21)' : cap1(dayLabel(d.day!, true)) + ' ' + parseDay(d.day!).getUTCFullYear()
+  const dayText = d.autoDay ? 'Sjálfvirkt (dagurinn í dag)' : cap1(dayLabel(d.day!, true)) + ' ' + parseDay(d.day!).getUTCFullYear()
 
   return (
     <>

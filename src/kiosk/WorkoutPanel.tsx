@@ -8,14 +8,14 @@ import { PanelSettings } from './Settings'
 
 /**
  * Æfing dagsins í stóru letri (sjónvarpið).
- * Sjálfvirkt: námskeið tímans sem er í gangi eða næstur, og æfing morgundagsins eftir kl. 21.
+ * Sjálfvirkt: námskeið tímans sem er í gangi eða næstur, og skiptir yfir á nýjan dag á miðnætti.
  */
 export default function WorkoutPanel(pp: PanelProps) {
   const { cfg, setCfg } = pp
   const now = useNow()
   const today = dayKey(now)
   const [settings, setSettings] = useState<null | 'type' | 'day' | 'prog'>(null)
-  const day = cfg.autoDay || !cfg.day ? (now.getUTCHours() >= 21 ? addDays(today, 1) : today) : cfg.day
+  const day = cfg.autoDay || !cfg.day ? today : cfg.day
 
   const { data: programs } = useData((a) => a.programs())
   const { data: classes } = useData((a) => a.classList(dayStart(day), dayStart(addDays(day, 1))), [day])
