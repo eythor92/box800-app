@@ -82,12 +82,21 @@ export function supabaseApi(url: string, key: string): Api {
       const me = await rpc<string>('me')
       must(await sb.from('notifications').update({ read_at: new Date().toISOString() }).eq('profile_id', me).is('read_at', null))
     },
+    async movements() { return must(await sb.from('movements').select('*').eq('active', true).order('sort').order('name')) },
+    async addMovement(name) { return must(await sb.from('movements').insert({ name: name.trim() }).select().single()) },
+    saveResult: (r) => rpc('save_result', { p: r }),
+    deleteResult: (id) => rpc('delete_result', { p_id: id }),
+    myComponentResults: (from, to) => rpc('my_component_results', { p_from: from, p_to: to }),
+    liftHistory: (m) => rpc('lift_history', { p_movement: m }),
+    myLifts: () => rpc('my_lifts'),
+    leaderboard: (w, k) => rpc('component_leaderboard', { p_workout: w, p_key: k }),
     subscribe(cb) {
       const ch = sb.channel('box800')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'bookings' }, cb)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'classes' }, cb)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications' }, cb)
         .on('postgres_changes', { event: '*', schema: 'public', table: 'workouts' }, cb)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'results' }, cb)
         .subscribe()
       // Fjöldi í tímum annarra sést ekki í rauntíma (persónuvernd), svo uppfært reglulega líka
       const t = setInterval(cb, 30000)

@@ -16,6 +16,9 @@ import AdminClasses from './admin/AdminClasses'
 import AdminSettings from './admin/AdminSettings'
 import AdminMembers from './admin/AdminMembers'
 import KioskPlus from './kiosk/KioskPlus'
+import Results from './pages/Results'
+import LiftHistory from './pages/LiftHistory'
+import Leaderboard from './pages/Leaderboard'
 
 export default function App() {
   const [api, setApi] = useState<Api | null>(null)
@@ -60,6 +63,9 @@ export default function App() {
             <Route path="/timatafla" element={<Schedule />} />
             <Route path="/aefing" element={<WorkoutView />} />
             <Route path="/maeting" element={<Attendance />} />
+            <Route path="/arangur" element={<Results />} />
+            <Route path="/arangur/:id" element={<LiftHistory />} />
+            <Route path="/stigatafla/:id" element={<Leaderboard />} />
             {staff && <Route path="/thjalfari" element={<CoachClasses />} />}
             {staff && <Route path="/thjalfari/aefing" element={<WorkoutView coach />} />}
             {staff && <Route path="/thjalfari/timi/:id" element={<CoachClass />} />}

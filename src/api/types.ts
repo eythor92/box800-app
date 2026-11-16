@@ -46,6 +46,12 @@ export interface Program { id: number; name: string; color: string; default_cap:
 export type ComponentType = 'metcon' | 'header' | 'lift' | 'video' | 'image'
 export interface WorkoutComponent {
   type: ComponentType
+  /** Fast auðkenni hlutans (skor tengjast því) */
+  key?: string
+  /** Lyftur: hreyfing og sett x endurtekningar */
+  movement_id?: number
+  sets?: number
+  reps?: number
   prefix?: string
   title?: string
   body?: string
@@ -107,6 +113,28 @@ export interface NewMember {
   is_dependent?: boolean
 }
 
+export interface Movement { id: number; name: string; sort: number }
+export type ScoreKind = 'weight' | 'time' | 'rounds' | 'reps' | 'cal' | 'dist' | 'done'
+export interface Result {
+  id?: number
+  profile_id?: string
+  day: string
+  workout_id?: number | null
+  comp_key?: string | null
+  movement_id?: number | null
+  sets?: number | null
+  reps?: number | null
+  weight?: number | null
+  kind: ScoreKind
+  score_num?: number | null
+  score_text?: string | null
+  rx?: 'Rx+' | 'Rx' | 'Scaled' | null
+  note?: string | null
+  source?: string
+}
+export interface LiftSummary { movement_id: number; name: string; best: number; best_1rm: number | null; last_day: string; n: number }
+export interface LeaderRow { profile_id: string; full_name: string; avatar_url: string | null; kind: ScoreKind; score_num: number | null; score_text: string | null; sets: number | null; reps: number | null; weight: number | null; rx: Result['rx']; is_me: boolean }
+
 export interface Api {
   demo: boolean
   // innskráning
@@ -143,4 +171,13 @@ export interface Api {
   notifications(): Promise<Notification[]>
   markNotificationsRead(): Promise<void>
   subscribe(cb: () => void): () => void
+  // skor og árangur
+  movements(): Promise<Movement[]>
+  addMovement(name: string): Promise<Movement>
+  saveResult(r: Result): Promise<number>
+  deleteResult(id: number): Promise<void>
+  myComponentResults(from: string, to: string): Promise<Result[]>
+  liftHistory(movementId: number): Promise<Result[]>
+  myLifts(): Promise<LiftSummary[]>
+  leaderboard(workoutId: number, key: string): Promise<LeaderRow[]>
 }

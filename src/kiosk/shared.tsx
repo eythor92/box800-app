@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ClassRow, Workout } from '../api'
 import { parseLines } from '../util'
+import { compTitle } from '../score'
 
 /** Klukka sem tifar (fyrir sjálfvirkt val á tíma og degi) */
 export function useNow(ms = 30000): Date {
@@ -83,7 +84,7 @@ export function BigWorkout({ w, title, scale = 1, columns = 1 }: { w: Workout; t
         {w.components.map((c, i) => {
           if (c.type === 'header') return <div key={i} className="bigw-sec">{c.title}</div>
           if (c.type === 'image' || c.type === 'video') return null
-          const head = ((c.prefix ? c.prefix + '. ' : '') + (c.title || '')).trim()
+          const head = c.title || c.prefix ? compTitle(c) : ''
           return (
             <div key={i} className="bigw-part">
               {head && <div className="bigw-h">{head}</div>}

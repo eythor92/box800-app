@@ -17,6 +17,7 @@ await db.exec(`
 `);
 try { await db.exec(fs.readFileSync(new URL('001_init.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 001:', e.message, e.position); process.exit(1); }
 await db.exec(fs.readFileSync(new URL('002_seed.sql', dir), 'utf8'));
+try { await db.exec(fs.readFileSync(new URL('005_results.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 005:', e.message, e.position); process.exit(1); }
 console.log('Uppsetning tókst');
 
 // Notendur
@@ -106,5 +107,22 @@ ok((await q(`select role from profiles where auth_id = $1`, [members[4]]))[0].ro
 
 await as(U.eythor); const ov = await q(`select * from member_overview()`); ok(ov.length >= 8, 'member_overview: ' + ov.length + ' prófílar');
 await as(members[4]); ok((await q(`select * from member_overview()`)).length === 0, 'Iðkandi sér ekki iðkendalista');
+// Skor
+const [bs] = await q(`select id from movements where name = 'Back Squat'`);
+const [wk] = await q(`select id from workouts limit 1`);
+await as(members[1]);
+const r1 = (await q(`select save_result($1) id`, [{ workout_id: wk.id, comp_key: 'a', movement_id: bs.id, sets: 1, reps: 5, weight: 80, kind: 'weight', score_num: 80, score_text: '1 x 5 @ 80' }]))[0].id;
+const r1b = (await q(`select save_result($1) id`, [{ workout_id: wk.id, comp_key: 'a', movement_id: bs.id, sets: 1, reps: 5, weight: 85, kind: 'weight', score_num: 85 }]))[0].id;
+ok(String(r1) === String(r1b), 'Sama hluta skráð aftur → skorið uppfærist (ekki tvítekið)');
+await q(`select save_result($1)`, [{ movement_id: bs.id, sets: 1, reps: 1, weight: 110, day: '2026-01-10', kind: 'weight', score_num: 110 }]);
+ok((await q(`select * from lift_history($1)`, [bs.id])).length === 2, 'Saga: 2 skráningar í Back Squat');
+ok(Number((await q(`select * from my_lifts()`))[0].best_1rm) === 110, 'Besta 1RM = 110');
+await as(members[2]);
+await q(`select save_result($1)`, [{ workout_id: wk.id, comp_key: 'a', movement_id: bs.id, sets: 1, reps: 5, weight: 100, kind: 'weight', score_num: 100 }]);
+ok((await q(`select * from component_leaderboard($1, 'a')`, [wk.id])).length === 2, 'Stigatafla sýnir alla sem skráðu');
+ok((await q(`select * from lift_history($1, $2)`, [bs.id, await pid(members[1])])).length === 0, 'Iðkandi sér ekki sögu annarra');
+await expectErr(() => q(`select save_result($1)`, [{ id: r1, weight: 1 }]), 'fannst ekki', 'Iðkandi getur ekki breytt skori annars');
+await as(U.alda); ok((await q(`select * from lift_history($1, $2)`, [bs.id, await pid(members[1])])).length === 2, 'Þjálfari sér sögu iðkanda');
+
 console.log(fails ? `\n${fails} próf féllu` : '\nÖll próf stóðust');
 process.exit(fails ? 1 : 0);

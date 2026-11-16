@@ -4,14 +4,11 @@ import { useApp, useData } from '../ctx'
 import { Icon } from '../components/Icon'
 import { WorkoutRender } from '../pages/WorkoutView'
 import { addDays, cap1, dayLabel, errMsg, mondayOf, today } from '../util'
+import { newKey } from '../score'
 
 const SCORING = ['Hak (lokið)', 'Tími', 'Umferðir + endurtekningar', 'Endurtekningar', 'Þyngd (kg)', 'Kaloríur', 'Vegalengd (m)', 'Engin skráning']
 const SCALING = ['Engin', 'Scaled / Rx', 'Scaled / Rx / Rx+']
-const LABEL: Record<string, string> = { metcon: 'ÆFING (EINU SINNI)', header: 'KAFLAFYRIRSÖGN', lift: 'ÚR ÆFINGASAFNI', video: 'MYNDBAND', image: 'MYND' }
-const LIBRARY: [string, string, string][] = [
-  ['Hnébeygja (back squat)', 'Þyngd (kg)', '5x5'], ['Bekkpressa', 'Þyngd (kg)', '5x5'], ['Framhnébeygja (front squat)', 'Þyngd (kg)', '5x3'],
-  ['Axlapressa', 'Þyngd (kg)', '5x5'], ['Réttstöðulyfta', 'Þyngd (kg)', '5x3'], ['Clean', 'Þyngd (kg)', '5x2'], ['Snatch', 'Þyngd (kg)', '5x2'], ['Upphífingar', 'Endurtekningar', '4 sett hámark'],
-]
+const LABEL: Record<string, string> = { metcon: 'ÆFING (EINU SINNI)', header: 'KAFLAFYRIRSÖGN', lift: 'LYFTA (SKOR SKRÁÐ OG VISTAÐ Í SÖGU)', video: 'MYNDBAND', image: 'MYND' }
 const MODES: [Workout['publish_mode'], string][] = [['evening_before', 'Kvöldið áður kl. 20:00'], ['now', 'Strax'], ['morning', 'Sama dag kl. 05:00']]
 
 export default function AdminWorkouts() {
@@ -26,6 +23,7 @@ export default function AdminWorkouts() {
   const [saving, setSaving] = useState(false)
   const week = mondayOf(day)
   const { data: programs } = useData((a) => a.programs())
+  const { data: movements, reload: reloadMov } = useData((a) => a.movements())
   const { data: workouts } = useData((a) => a.workouts(addDays(week, -7), addDays(week, 13)), [week])
   const prog = pid ?? programs?.[0]?.id ?? null
   const saved = useMemo(() => (workouts ?? []).find((w) => w.program_id === prog && w.day === day) ?? null, [workouts, prog, day])
@@ -41,7 +39,7 @@ export default function AdminWorkouts() {
   const w: Workout = draft ?? { program_id: prog ?? 0, day, components: [], status: 'draft', publish_mode: 'evening_before' }
   const set = (fn: (w: Workout) => void) => { const n = structuredClone(w); fn(n); setDraft(n); setDirty(true) }
   const setC = (i: number, patch: Partial<WorkoutComponent>) => set((n) => { n.components[i] = { ...n.components[i], ...patch } })
-  const add = (c: WorkoutComponent) => { set((n) => { n.components.push(c) }); setChooser(false) }
+  const add = (c: WorkoutComponent) => { set((n) => { n.components.push({ ...c, key: newKey() }) }); setChooser(false); setLibQ('') }
 
   function toggleBold(i: number) {
     const el = taRefs.current[i], body = w.components[i].body ?? ''
@@ -61,7 +59,7 @@ export default function AdminWorkouts() {
     if (prog == null) return
     setSaving(true)
     try {
-      await api.saveWorkout({ ...w, program_id: prog, day, status })
+      await api.saveWorkout({ ...w, program_id: prog, day, status, components: w.components.map((c) => (c.key ? c : { ...c, key: newKey() })) })
       setDirty(false); refresh()
       const when = status === 'draft' ? 'Vistað sem drög' : w.publish_mode === 'now' ? 'Birt – iðkendur sjá æfinguna núna' : 'Birt – ' + publishText(w.publish_mode, day).replace('Birtist iðkendum', 'sést')
       toast(when)
@@ -161,12 +159,26 @@ export default function AdminWorkouts() {
                     <input className="input" value={c.title ?? ''} onChange={(e) => setC(i, { title: e.target.value })} placeholder="T.d. Upphitun" style={{ color: 'var(--accent)', fontWeight: 700 }} />
                   </label>
                 )}
+                {c.type === 'lift' && (
+                  <div className="row" style={{ marginTop: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                    <label className="field" style={{ width: 90 }}><span>Forskeyti</span><input className="input" value={c.prefix ?? ''} onChange={(e) => setC(i, { prefix: e.target.value })} placeholder="A" style={{ textAlign: 'center' }} /></label>
+                    <label className="field grow" style={{ minWidth: 180 }}><span>Hreyfing</span>
+                      <select className="select" value={c.movement_id ?? ''} onChange={(e) => { const m = movements?.find((x) => x.id === Number(e.target.value)); setC(i, { movement_id: m?.id, title: m?.name }) }} style={{ color: 'var(--accent)', fontWeight: 700 }}>
+                        {!c.movement_id && <option value="">Veldu hreyfingu…</option>}
+                        {(movements ?? []).map((m) => <option key={m.id} value={m.id}>{m.name}</option>)}
+                      </select>
+                    </label>
+                    <label className="field" style={{ width: 76 }}><span>Sett</span><input className="input" type="number" min={1} value={c.sets ?? 1} onChange={(e) => setC(i, { sets: Number(e.target.value) || 1 })} style={{ textAlign: 'center' }} /></label>
+                    <span style={{ paddingBottom: 12, fontWeight: 800 }}>x</span>
+                    <label className="field" style={{ width: 76 }}><span>Endurt.</span><input className="input" type="number" min={1} value={c.reps ?? 5} onChange={(e) => setC(i, { reps: Number(e.target.value) || 1 })} style={{ textAlign: 'center' }} /></label>
+                  </div>
+                )}
                 {(c.type === 'metcon' || c.type === 'lift') && (
                   <>
-                    <div className="row" style={{ marginTop: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                    {c.type === 'metcon' && <div className="row" style={{ marginTop: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                       <label className="field" style={{ width: 90 }}><span>Forskeyti</span><input className="input" value={c.prefix ?? ''} onChange={(e) => setC(i, { prefix: e.target.value })} placeholder="A" style={{ textAlign: 'center' }} /></label>
                       <label className="field grow" style={{ minWidth: 200 }}><span>Titill (valfrjálst)</span><input className="input" value={c.title ?? ''} onChange={(e) => setC(i, { title: e.target.value })} placeholder="T.d. Mánudagur" style={{ color: 'var(--accent)', fontWeight: 700 }} /></label>
-                    </div>
+                    </div>}
                     <div className="row" style={{ justifyContent: 'space-between', marginTop: 12, marginBottom: 6 }}>
                       <label className="label" htmlFor={`ta${i}`}>Leiðbeiningar</label>
                       <button className="btn btn-ghost btn-sm" style={{ width: 40, fontWeight: 900, fontSize: 17 }} title="Feitletra línu (Ctrl+B)" aria-label="Feitletra línu (Ctrl+B)" onMouseDown={(e) => e.preventDefault()} onClick={() => toggleBold(i)}>B</button>
@@ -177,7 +189,8 @@ export default function AdminWorkouts() {
                     <label className="field" style={{ marginTop: 12 }}><span>Athugasemd til iðkenda (einu sinni)</span>
                       <textarea className="textarea" rows={2} value={c.comment ?? ''} onChange={(e) => setC(i, { comment: e.target.value })} placeholder="T.d. Veljið þyngd sem þið ráðið við í öllum umferðum" />
                     </label>
-                    <div className="row" style={{ marginTop: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                    {c.type === 'lift' && <div className="muted" style={{ fontSize: 13, marginTop: 10 }}>Iðkendur skrá þyngdina sína. Hún vistast í sögunni þeirra fyrir {c.title || 'hreyfinguna'}, með línuriti og PR.</div>}
+                    {c.type === 'metcon' && <div className="row" style={{ marginTop: 12, flexWrap: 'wrap', alignItems: 'flex-end' }}>
                       <label className="field grow" style={{ minWidth: 180 }}><span>Skráning</span>
                         <select className="select" value={c.scoring ?? 'Hak (lokið)'} onChange={(e) => setC(i, { scoring: e.target.value })}>{SCORING.map((s) => <option key={s}>{s}</option>)}</select>
                       </label>
@@ -185,7 +198,7 @@ export default function AdminWorkouts() {
                       <label className="field grow" style={{ minWidth: 160 }}><span>Skölun</span>
                         <select className="select" value={c.scaling ?? 'Engin'} onChange={(e) => setC(i, { scaling: e.target.value })}>{SCALING.map((s) => <option key={s}>{s}</option>)}</select>
                       </label>
-                    </div>
+                    </div>}
                   </>
                 )}
                 {(c.type === 'video' || c.type === 'image') && (
@@ -251,12 +264,19 @@ export default function AdminWorkouts() {
               ))}
             </div>
             <div style={{ borderTop: '1px solid var(--line)', marginTop: 18, paddingTop: 16 }}>
-              <input className="input" value={libQ} onChange={(e) => setLibQ(e.target.value)} placeholder="Leita í æfingasafni" aria-label="Leita í æfingasafni" />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10 }}>
-                {LIBRARY.filter(([n]) => !libQ || n.toLowerCase().includes(libQ.toLowerCase())).map(([n, s, b]) => (
-                  <button key={n} className="row" style={{ minHeight: 46, padding: '0 16px', borderRadius: 3, border: '1px solid var(--line)', justifyContent: 'space-between', fontWeight: 600 }}
-                    onClick={() => add({ type: 'lift', title: n, body: b, scoring: s, scaling: 'Engin' })}>{n}<span className="muted" style={{ fontSize: 13, fontWeight: 500 }}>{s}</span></button>
+              <div className="label" style={{ marginBottom: 8 }}>Lyfta úr hreyfingasafni (iðkendur skrá þyngd)</div>
+              <input className="input" value={libQ} onChange={(e) => setLibQ(e.target.value)} placeholder="Leita, t.d. back squat" aria-label="Leita í hreyfingasafni" />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 10, maxHeight: 320, overflowY: 'auto' }}>
+                {(movements ?? []).filter((m) => !libQ || m.name.toLowerCase().includes(libQ.toLowerCase())).map((m) => (
+                  <button key={m.id} className="row" style={{ minHeight: 46, padding: '0 16px', borderRadius: 3, border: '1px solid var(--line)', justifyContent: 'space-between', fontWeight: 600 }}
+                    onClick={() => add({ type: 'lift', movement_id: m.id, title: m.name, sets: 1, reps: 5, body: '', scoring: 'Þyngd (kg)', scaling: 'Engin' })}>{m.name}<span className="muted" style={{ fontSize: 13, fontWeight: 500 }}>Þyngd (kg)</span></button>
                 ))}
+                {libQ.trim() && !(movements ?? []).some((m) => m.name.toLowerCase() === libQ.trim().toLowerCase()) && (
+                  <button className="row" style={{ minHeight: 46, padding: '0 16px', borderRadius: 3, border: '1.5px dashed var(--accent)', color: 'var(--accent)', fontWeight: 700 }}
+                    onClick={async () => { try { const m = await api.addMovement(libQ); reloadMov(); add({ type: 'lift', movement_id: m.id, title: m.name, sets: 1, reps: 5, body: '', scoring: 'Þyngd (kg)', scaling: 'Engin' }) } catch (e) { toast(errMsg(e)) } }}>
+                    + Bæta „{libQ.trim()}“ við hreyfingasafnið
+                  </button>
+                )}
               </div>
             </div>
           </div>

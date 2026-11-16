@@ -6,6 +6,7 @@ Ein vefsíða sem virkar líka sem app í símanum (PWA: „Bæta við heimaskj�
 ## Uppbygging
 - `src/` – appið (React + Vite). Iðkendur `/`, þjálfarar `/#/thjalfari`, eigandi `/#/stjorn`.
 - `supabase/migrations/` – gagnagrunnur og allar reglur (bókanir, biðlisti, réttindi).
+  - `005_results.sql` skor, hreyfingar, saga og stigatafla
   - `001_init.sql` töflur, reglur og föll · `002_seed.sql` námskeið og föst tímatafla · `003_cron.sql` sjálfvirk verk
 - `supabase/test/test.mjs` – prófar reglurnar (`node supabase/test/test.mjs`).
 - Án Supabase-stillinga keyrir appið í **prófunarútgáfu** sem keyrir sama SQL í vafranum.

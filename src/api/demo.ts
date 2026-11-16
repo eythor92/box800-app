@@ -3,6 +3,7 @@
 import { PGlite } from '@electric-sql/pglite'
 import initSql from '../../supabase/migrations/001_init.sql?raw'
 import seedSql from '../../supabase/migrations/002_seed.sql?raw'
+import resultsSql from '../../supabase/migrations/005_results.sql?raw'
 import demoSql from '../../supabase/demo/demo_seed.sql?raw'
 import type { Api, Profile, Settings, Workout } from './types'
 
@@ -24,6 +25,7 @@ export async function demoApi(): Promise<Api> {
   `)
   await db.exec(initSql)
   await db.exec(seedSql)
+  await db.exec(resultsSql)
   await db.exec(demoSql)
 
   let current: string | null = sessionStorageGet()
@@ -100,11 +102,25 @@ export async function demoApi(): Promise<Api> {
     myAttendance: () => rows(`select * from my_attendance()`),
     notifications: () => rows(`select * from notifications where profile_id = me() order by created_at desc limit 40`),
     markNotificationsRead: async () => { await write(`update notifications set read_at = now() where profile_id = me() and read_at is null`) },
+    movements: () => rows(`select * from movements where active order by sort, name`),
+    addMovement: async (name) => { const r = await one<{ id: number; name: string; sort: number }>(`insert into movements (name) values ($1) returning *`, [name.trim()]); changed(); return r },
+    saveResult: (r) => val(`select save_result($1)`, [JSON.stringify(r)]).then(Number),
+    deleteResult: async (id) => { await write(`select delete_result($1)`, [id]) },
+    myComponentResults: (f, t) => rows(`select *, to_char(day, 'YYYY-MM-DD') as day from my_component_results($1, $2)`, [f, t]).then(numify),
+    liftHistory: (m) => rows(`select *, to_char(day, 'YYYY-MM-DD') as day from lift_history($1)`, [m]).then(numify),
+    myLifts: () => rows(`select *, to_char(last_day, 'YYYY-MM-DD') as last_day from my_lifts()`).then(numify),
+    leaderboard: (w, k) => rows(`select * from component_leaderboard($1, $2)`, [w, k]).then(numify),
     subscribe(cb) { listeners.add(cb); return () => listeners.delete(cb) },
   }
 }
 
 const authListeners = new Set<() => void>()
+// numeric kemur sem strengur; breytum í tölu
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function numify<T>(rs: T[]): any {
+  for (const r of rs as Record<string, unknown>[]) for (const k of ['weight', 'score_num', 'best', 'best_1rm', 'id', 'workout_id']) if (typeof r[k] === 'string') r[k] = Number(r[k])
+  return rs
+}
 // PGlite skilar Date-hlutum; Supabase skilar ISO-strengjum. Samræmum.
 function norm(r: unknown): unknown {
   const o = r as Record<string, unknown>

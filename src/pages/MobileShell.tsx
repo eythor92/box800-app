@@ -17,7 +17,7 @@ export default function MobileShell() {
   const staff = me.role !== 'member'
   const coachMode = loc.pathname.startsWith('/thjalfari')
   const isClassPage = loc.pathname.startsWith('/thjalfari/timi')
-  const title = TITLES[loc.pathname]
+  const title = TITLES[loc.pathname] ?? (loc.pathname.startsWith('/arangur') ? 'Árangur' : loc.pathname.startsWith('/stigatafla') ? 'Stigatafla' : undefined)
 
   async function openBell() {
     setBell(true)
@@ -93,6 +93,7 @@ export default function MobileShell() {
             </div>
             <Link to="/">Heim</Link>
             <Link to="/timatafla">Tímatafla</Link>
+            <Link to="/arangur">Árangur</Link>
             {me.role !== 'member' && <Link to="/kiosk">Kiosk+</Link>}
             {me.role === 'owner' && <Link to="/stjorn">Stjórnborð</Link>}
             <button className="link" onClick={() => api.signOut()}>Skrá út</button>

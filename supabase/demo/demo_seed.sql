@@ -73,11 +73,41 @@ order by c.starts_at desc limit 2 on conflict do nothing;
 -- Æfing dagsins
 insert into workouts (program_id, day, status, publish_mode, components)
 select id, current_date, 'published', 'evening_before', '[
-  {"type":"metcon","title":"Vikan framundan","body":"Mán: hyrox amrap\nÞri: bekkpressa + styrkur\nMið: amröp\nFim: hnébeygjur + emom\nFös: interval","scoring":"Engin skráning"},
-  {"type":"metcon","title":"Æfing dagsins","body":"AMRAP 28\n20 thrusters m. 1 db / goblet squat\n*15/12 cal tæki*\n20 alt. db snatch / hang db snatch\n*15/12 cal tæki*\n20 framstig m. 1 db / án db\n*15/12 cal tæki*\n20 burpees / sprawl\n*15/12 cal tæki*","scoring":"Umferðir + endurtekningar","scaling":"Scaled / Rx"}
+  {"type":"metcon","key":"vika","title":"Vikan framundan","body":"Mán: hyrox amrap\nÞri: bekkpressa + styrkur\nMið: amröp\nFim: hnébeygjur + emom\nFös: interval","scoring":"Engin skráning"},
+  {"type":"metcon","key":"wod","title":"Æfing dagsins","body":"AMRAP 28\n20 thrusters m. 1 db / goblet squat\n*15/12 cal tæki*\n20 alt. db snatch / hang db snatch\n*15/12 cal tæki*\n20 framstig m. 1 db / án db\n*15/12 cal tæki*\n20 burpees / sprawl\n*15/12 cal tæki*","scoring":"Umferðir + endurtekningar","scaling":"Scaled / Rx"}
 ]'::jsonb from programs where name in ('Hreysti', 'Karlahreysti');
 
 insert into workouts (program_id, day, status, publish_mode, components)
 select id, current_date + 1, 'draft', 'evening_before', '[
   {"type":"metcon","title":"Styrkur","body":"Bekkpressa 5x5\nSíðan:\n3 umferðir\n10 róður m. lóðum\n12 axlapressa\n*200 m hlaup*","scoring":"Þyngd (kg)"}
 ]'::jsonb from programs where name = 'Hreysti';
+
+-- Skor og árangur (demo þarf 005_results.sql)
+update workouts w set components = jsonb_build_array(jsonb_build_object(
+    'type', 'lift', 'key', 'bs', 'title', 'Back Squat', 'movement_id', (select id from movements where name = 'Back Squat'),
+    'sets', 1, 'reps', 5, 'body', E'Á hverjum 3:00 x 5\n5 back squat\n20/20s copenhagen plank', 'scoring', 'Þyngd (kg)')) || w.components
+from programs p where p.id = w.program_id and p.name = 'Hreysti' and w.day = current_date;
+
+-- Saga Sigrúnar (prufuiðkanda)
+insert into results (profile_id, day, movement_id, sets, reps, weight, kind, score_num)
+select (select id from profiles where email = 'idkandi@box800.demo'), current_date - d, m.id, 1, r, w, 'weight', w
+from (values
+  ('Back Squat', 300, 5, 60), ('Back Squat', 240, 5, 65), ('Back Squat', 180, 1, 80), ('Back Squat', 120, 5, 70), ('Back Squat', 60, 1, 85), ('Back Squat', 21, 3, 80),
+  ('Deadlift', 200, 5, 80), ('Deadlift', 100, 1, 110), ('Deadlift', 30, 3, 105),
+  ('Bench Press', 150, 5, 40), ('Bench Press', 45, 5, 45), ('Bench Press', 14, 1, 52.5)
+) v(mv, d, r, w) join movements m on m.name = v.mv;
+
+-- Aðrir iðkendur á stigatöflu dagsins
+insert into results (profile_id, day, workout_id, comp_key, movement_id, sets, reps, weight, kind, score_num)
+select pr.id, current_date, w.id, 'bs', (select id from movements where name = 'Back Squat'), 1, 5,
+       (array[105, 90, 70, 70, 70, 60, 55, 82.5])[row_number() over (order by pr.full_name)], 'weight',
+       (array[105, 90, 70, 70, 70, 60, 55, 82.5])[row_number() over (order by pr.full_name)]
+from (select id, full_name from profiles where role = 'member' and email <> 'idkandi@box800.demo' order by full_name limit 8) pr,
+     workouts w join programs p on p.id = w.program_id
+where p.name = 'Hreysti' and w.day = current_date;
+insert into results (profile_id, day, workout_id, comp_key, kind, score_num, score_text, rx)
+select pr.id, current_date, w.id, 'wod', 'rounds', v.n, (v.n / 1000) || ' + ' || (v.n % 1000), v.rx
+from (select id, row_number() over (order by full_name desc) rn from profiles where role = 'member' and email <> 'idkandi@box800.demo' limit 6) pr
+join (values (1, 6040, 'Rx'), (2, 5120, 'Rx'), (3, 6010, 'Scaled'), (4, 5120, 'Rx'), (5, 4300, 'Scaled'), (6, 7002, 'Rx')) v(rn, n, rx) on v.rn = pr.rn,
+     workouts w join programs p on p.id = w.program_id
+where p.name = 'Hreysti' and w.day = current_date;
