@@ -32,7 +32,7 @@ export default function ClassSheet({ c, onClose }: { c: ClassRow; onClose: () =>
   let btn = 'Bóka', kind = 'btn-primary', note = '', noteCls = ''
   if (c.cancelled) { btn = 'Tíma aflýst'; kind = 'btn-ghost'; note = 'Þessum tíma hefur verið aflýst.'; noteCls = 'error' }
   else if (st.past) { btn = st.booked ? 'Þú mættir í þennan tíma' : 'Tíminn er liðinn'; kind = 'btn-ghost' }
-  else if (st.booked) { btn = 'Afbóka'; kind = 'btn-ghost'; note = 'Hægt er að afbóka án refsingar allt að 30 mín. fyrir tímann.' }
+  else if (st.booked) { btn = 'Afbóka'; kind = 'btn-ghost'; }
   else if (st.waiting) { btn = 'Fara af biðlista'; kind = 'btn-ghost'; note = `Þú ert nr. ${c.my_position} á biðlista. Ef einhver afbókar færðu plássið sjálfkrafa og tilkynningu.` }
   else if (notOpen) { btn = 'Bókanir ekki opnar'; kind = 'btn-ghost'; note = `Bókanir opna ${whenText(opensAt!.toISOString()).replace('Í dag', 'í dag').replace('Á morgun', 'á morgun')}.` }
   else if (st.full) { btn = 'Fara á biðlista'; note = `Tíminn er fullur${c.waiting ? ` og ${c.waiting} á biðlista` : ''}. Þú færð plássið sjálfkrafa ef einhver afbókar.` }
@@ -42,8 +42,8 @@ export default function ClassSheet({ c, onClose }: { c: ClassRow; onClose: () =>
     setBusy(true)
     try {
       if (st.booked || st.waiting) {
-        const r = await api.cancelBooking(c.id)
-        toast(r === 'late_cancel' ? 'Afbókað – of seint til að afbóka án refsingar' : st.waiting ? 'Þú ert farin(n) af biðlista' : 'Bókun afturkölluð')
+        await api.cancelBooking(c.id)
+        toast(st.waiting ? 'Þú ert farin(n) af biðlista' : 'Bókun afturkölluð')
       } else {
         const r = await api.book(c.id)
         toast(r === 'waitlist' ? 'Þú ert á biðlista – við látum þig vita' : `Bókað! ${c.program} kl. ${hhmm(c.starts_at)}`)

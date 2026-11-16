@@ -53,7 +53,7 @@ export default function AdminSettings() {
             </div>
             <div style={{ borderTop: '1px solid var(--line)', marginTop: 12 }} />
             <div className="row" style={{ flexWrap: 'wrap', marginTop: 14 }}><span style={{ minWidth: 170 }}>Bókanir loka</span><input className="input" style={box} type="number" min={0} value={s.close_minutes} onChange={num('close_minutes')} aria-label="Mínútur" /><span>mínútum fyrir tímann</span></div>
-            <div className="row" style={{ flexWrap: 'wrap', marginTop: 14 }}><span style={{ minWidth: 170 }}>Afbókun án refsingar til</span><input className="input" style={box} type="number" min={0} value={s.cancel_minutes} onChange={num('cancel_minutes')} aria-label="Mínútur" /><span>mínútum fyrir tímann</span></div>
+            <div className="row" style={{ flexWrap: 'wrap', marginTop: 14 }}><span style={{ minWidth: 170 }}>Biðlisti færist inn til</span><input className="input" style={box} type="number" min={0} value={s.cancel_minutes} onChange={num('cancel_minutes')} aria-label="Mínútur" /><span>mínútum fyrir tímann</span></div>
           </section>
 
           <section className="a-card">
@@ -91,7 +91,7 @@ export default function AdminSettings() {
           {[
             [(opens < -1440 ? Math.ceil(-opens / 1440) + ' dögum áður ' : opens < 0 ? 'Daginn áður ' : '') + t(opens), 'Bókanir opna'],
             ['Kvöldið áður 20:00', 'Æfingin birtist í appinu'],
-            [t(cls - s.cancel_minutes), s.waitlist_on && s.waitlist_mode === 'auto' ? 'Síðasti séns að afbóka. Biðlisti hættir að færast sjálfkrafa inn.' : 'Síðasti séns að afbóka án refsingar'],
+            [t(cls - s.cancel_minutes), s.waitlist_on && s.waitlist_mode === 'auto' ? 'Biðlisti hættir að færast sjálfkrafa inn. Eftir þetta fær sá sem bókar fyrst laust pláss.' : 'Biðlisti hættir að færast inn'],
             [t(cls - s.close_minutes), (s.close_minutes ? 'Bókanir loka' : 'Bókanir loka þegar tíminn byrjar') + (s.auto_cancel_on ? `. Aflýst ef færri en ${s.auto_cancel_min} eru skráðir.` : '')],
           ].map(([w, x]) => <div key={w + x} className="row" style={{ alignItems: 'flex-start', marginTop: 12, fontSize: 14 }}><b style={{ minWidth: 120, color: 'var(--accent)' }}>{w}</b><span>{x}</span></div>)}
         </aside>

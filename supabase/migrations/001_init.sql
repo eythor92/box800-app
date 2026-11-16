@@ -118,7 +118,7 @@ create table if not exists settings (
   open_time           time not null default '12:00', -- … á þessum tíma (t.d. kl. 12:00 daginn áður)
   open_minutes        int not null default 1230,  -- 'relative': bókanir opna X mín. fyrir tíma
   close_minutes       int not null default 0,     -- bókanir loka X mín. fyrir tíma
-  cancel_minutes      int not null default 30,    -- afbókun án refsingar til X mín. fyrir
+  cancel_minutes      int not null default 30,    -- biðlisti færist sjálfkrafa inn til X mín. fyrir
   waitlist_on         boolean not null default true,
   waitlist_mode       text not null default 'auto' check (waitlist_mode in ('auto', 'all')),
   waitlist_limit      int not null default 0,     -- 0 = ekkert hámark
