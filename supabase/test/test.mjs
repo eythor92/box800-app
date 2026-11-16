@@ -125,6 +125,19 @@ await as(members[1]); ok((await q(`select book_class($1) s`, [w20.id]))[0].s ===
 await as(members[0]); await q(`select cancel_booking($1)`, [w20.id]);
 ok((await q(`select status from bookings where class_id = $1 and profile_id = $2`, [w20.id, await pid(members[1])]))[0].status === 'booked', 'Afbókun 20 mín. fyrir: fyrsti á biðlista fer sjálfkrafa inn');
 
+// Fellur niður 2 klst. fyrir ef 3 eða færri eru skráðir
+await as(U.eythor);
+const mk = async (mins) => (await q(`insert into classes (program_id, starts_at, ends_at) select id, now() + make_interval(mins => $1), now() + make_interval(mins => $1 + 60) from programs where name = 'Hreysti' returning id`, [mins]))[0].id;
+const few = await mk(115), many = await mk(116), early = await mk(200);
+for (let i = 0; i < 3; i++) await q(`insert into bookings (class_id, profile_id, status) values ($1, $2, 'booked')`, [few, await pid(members[i])]);
+for (let i = 0; i < 4; i++) await q(`insert into bookings (class_id, profile_id, status) values ($1, $2, 'booked')`, [many, await pid(members[i])]);
+await q(`select auto_cancel_low()`);
+const cs = async (id) => (await q(`select cancelled_at is not null c from classes where id = $1`, [id]))[0].c;
+ok(await cs(few) === true, '3 skráðir, 2 klst. fyrir → tíminn fellur niður');
+ok(await cs(many) === false, '4 skráðir → tíminn heldur');
+ok(await cs(early) === false, '3+ klst. fyrir → ekki ákveðið enn');
+ok((await q(`select count(*)::int n from notifications where class_id = $1`, [few]))[0].n >= 3, 'Þeir skráðu fá tilkynningu');
+
 // Skráðir og innskráning iðkanda sjálfs
 await as(members[2]);
 ok((await q(`select * from class_attendees($1)`, [late.id])).length >= 1, 'Iðkandi sér hverjir eru skráðir');

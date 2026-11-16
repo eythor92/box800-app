@@ -123,8 +123,8 @@ create table if not exists settings (
   waitlist_mode       text not null default 'auto' check (waitlist_mode in ('auto', 'all')),
   waitlist_limit      int not null default 0,     -- 0 = ekkert hámark
   auto_cancel_on      boolean not null default true,
-  auto_cancel_minutes int not null default 0,
-  auto_cancel_min     int not null default 1
+  auto_cancel_minutes int not null default 120,   -- aflýsa X mín. fyrir tímann …
+  auto_cancel_min     int not null default 4      -- … ef færri en þetta eru skráðir (4 = „3 eða færri“)
 );
 insert into settings (id) values (1) on conflict do nothing;
 
@@ -539,20 +539,25 @@ end $$;
 -- Aflýsir tímum sjálfkrafa ef of fáir eru skráðir (keyrt á 5 mín. fresti)
 create or replace function auto_cancel_low() returns int
 language plpgsql security definer set search_path = public as $$
-declare s settings; c record; n int := 0;
+declare s settings; c classes; n int := 0;
 begin
   select * into s from settings where id = 1;
   if not s.auto_cancel_on then return 0; end if;
   for c in
     select cl.* from classes cl
     where cl.cancelled_at is null
+      -- ákveðið einu sinni, við tímamörkin (30 mín. svigrúm ef verk tefst)
       and now() >= cl.starts_at - make_interval(mins => s.auto_cancel_minutes)
-      and now() < cl.starts_at + interval '5 minutes'
+      and now() <  cl.starts_at - make_interval(mins => s.auto_cancel_minutes) + interval '30 minutes'
+      and now() <  cl.starts_at + interval '5 minutes'
       and (select count(*) from bookings b where b.class_id = cl.id and b.status = 'booked') < s.auto_cancel_min
   loop
     update classes set cancelled_at = now(), cancel_reason = 'Of fáir skráðir' where id = c.id;
+    -- láta alla vita sem voru skráðir eða á biðlista, og þjálfarann
+    perform notify(b.profile_id, class_label(c) || ' fellur niður', 'Of fáir voru skráðir, svo tímanum var aflýst.', c.id)
+    from bookings b where b.class_id = c.id and b.status in ('booked', 'waitlist');
     if c.coach_id is not null then
-      perform notify(c.coach_id, 'Tíma aflýst sjálfkrafa', 'Of fáir voru skráðir.', c.id);
+      perform notify(c.coach_id, 'Tíma aflýst sjálfkrafa: ' || class_label(c), 'Of fáir voru skráðir.', c.id);
     end if;
     n := n + 1;
   end loop;

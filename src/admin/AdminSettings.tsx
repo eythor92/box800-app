@@ -78,8 +78,12 @@ export default function AdminSettings() {
             </div>
             {s.auto_cancel_on && (
               <div className="row" style={{ flexWrap: 'wrap', marginTop: 12 }}>
-                <span>Aflýsa</span><input className="input" style={{ width: 80 }} type="number" min={0} value={s.auto_cancel_minutes} onChange={num('auto_cancel_minutes')} aria-label="Mínútur" />
-                <span>mín. fyrir tímann ef færri en</span><input className="input" style={{ width: 80 }} type="number" min={1} value={s.auto_cancel_min} onChange={num('auto_cancel_min')} aria-label="Fjöldi" /><span>eru skráðir.</span>
+                <span>Fella niður tímann</span>
+                <input className="input" style={{ width: 80 }} type="number" min={0} step={0.5} value={s.auto_cancel_minutes / 60} onChange={(e) => setS({ ...s, auto_cancel_minutes: Math.max(0, Math.round((Number(e.target.value.replace(',', '.')) || 0) * 60)) })} aria-label="Klukkustundir" />
+                <span>klst. fyrir ef</span>
+                <input className="input" style={{ width: 80 }} type="number" min={0} value={s.auto_cancel_min - 1} onChange={(e) => setS({ ...s, auto_cancel_min: Math.max(0, parseInt(e.target.value || '0', 10) || 0) + 1 })} aria-label="Fjöldi" />
+                <span>eða færri eru skráðir.</span>
+                <div className="muted" style={{ fontSize: 13, width: '100%' }}>Allir sem voru skráðir eða á biðlista fá tilkynningu, og þjálfarinn líka.</div>
               </div>
             )}
           </section>
@@ -91,8 +95,9 @@ export default function AdminSettings() {
           {[
             [(opens < -1440 ? Math.ceil(-opens / 1440) + ' dögum áður ' : opens < 0 ? 'Daginn áður ' : '') + t(opens), 'Bókanir opna'],
             ['Kvöldið áður 20:00', 'Æfingin birtist í appinu'],
+            ...(s.auto_cancel_on ? [[t(cls - s.auto_cancel_minutes), `Tíminn fellur niður ef ${s.auto_cancel_min - 1} eða færri eru skráðir`]] : []),
             [t(cls - s.cancel_minutes), s.waitlist_on && s.waitlist_mode === 'auto' ? 'Biðlisti hættir að færast sjálfkrafa inn. Eftir þetta fær sá sem bókar fyrst laust pláss.' : 'Biðlisti hættir að færast inn'],
-            [t(cls - s.close_minutes), (s.close_minutes ? 'Bókanir loka' : 'Bókanir loka þegar tíminn byrjar') + (s.auto_cancel_on ? `. Aflýst ef færri en ${s.auto_cancel_min} eru skráðir.` : '')],
+            [t(cls - s.close_minutes), s.close_minutes ? 'Bókanir loka' : 'Bókanir loka þegar tíminn byrjar'],
           ].map(([w, x]) => <div key={w + x} className="row" style={{ alignItems: 'flex-start', marginTop: 12, fontSize: 14 }}><b style={{ minWidth: 120, color: 'var(--accent)' }}>{w}</b><span>{x}</span></div>)}
         </aside>
       </div>
