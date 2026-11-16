@@ -251,10 +251,8 @@ export default function AdminWorkouts() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 14 }}>
               {([
-                ['metcon', 'Æfing (einu sinni)', 'Texti, athugasemd, skráning og skölun', true],
                 ['header', 'Kaflafyrirsögn', 'T.d. Upphitun, Styrkur, Vikan framundan', false],
-                ['video', 'Myndband', 'Slóð á YouTube, Instagram eða Vimeo', false],
-                ['image', 'Mynd', 'T.d. uppsetning á stöðvum', false],
+                ['metcon', 'Æfing (einu sinni)', 'Texti, athugasemd, skráning og skölun', true],
               ] as const).map(([t, l, d, main]) => (
                 <button key={t} onClick={() => add({ type: t, title: t === 'metcon' && !w.components.length ? cap1(dayLabel(day, true).split(' ')[0]) : '', body: '', scoring: t === 'metcon' ? 'Hak (lokið)' : undefined, scaling: 'Engin' })}
                   className="row" style={{ minHeight: 58, padding: '0 16px', borderRadius: 3, border: `1.5px solid ${main ? 'var(--accent)' : '#30353b'}`, background: main ? '#162430' : 'transparent' }}>
