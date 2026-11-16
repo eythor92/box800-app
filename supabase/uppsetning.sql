@@ -125,7 +125,8 @@ create table if not exists settings (
   waitlist_limit      int not null default 0,     -- 0 = ekkert hámark
   auto_cancel_on      boolean not null default true,
   auto_cancel_minutes int not null default 120,   -- aflýsa X mín. fyrir tímann …
-  auto_cancel_min     int not null default 4      -- … ef færri en þetta eru skráðir (4 = „3 eða færri“)
+  auto_cancel_min     int not null default 4,     -- … ef færri en þetta eru skráðir (4 = „3 eða færri“)
+  auto_cancel_stop    int not null default 20     -- síðustu X mín. fyrir tímann heldur hann sér
 );
 insert into settings (id) values (1) on conflict do nothing;
 
@@ -344,7 +345,7 @@ begin
   if staff and who <> me() then
     insert into audit_log (actor_id, action, class_id, detail) values (me(), 'remove_person', p_class, jsonb_build_object('profile', who));
   end if;
-  if b.status = 'booked' then perform promote_waitlist(p_class); end if;
+  if b.status = 'booked' then perform promote_waitlist(p_class); perform auto_cancel_low(); end if;
   return new_status;
 end $$;
 
@@ -547,10 +548,9 @@ begin
   for c in
     select cl.* from classes cl
     where cl.cancelled_at is null
-      -- ákveðið einu sinni, við tímamörkin (30 mín. svigrúm ef verk tefst)
+      -- frá X klst. fyrir tímann og þar til síðustu mínúturnar (þá heldur tíminn sér)
       and now() >= cl.starts_at - make_interval(mins => s.auto_cancel_minutes)
-      and now() <  cl.starts_at - make_interval(mins => s.auto_cancel_minutes) + interval '30 minutes'
-      and now() <  cl.starts_at + interval '5 minutes'
+      and now() <  cl.starts_at - make_interval(mins => s.auto_cancel_stop)
       and (select count(*) from bookings b where b.class_id = cl.id and b.status = 'booked') < s.auto_cancel_min
   loop
     update classes set cancelled_at = now(), cancel_reason = 'Of fáir skráðir' where id = c.id;

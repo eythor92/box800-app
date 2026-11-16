@@ -84,6 +84,7 @@ export interface Settings {
   auto_cancel_on: boolean
   auto_cancel_minutes: number
   auto_cancel_min: number
+  auto_cancel_stop: number
 }
 
 export interface MemberRow {

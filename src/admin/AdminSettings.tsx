@@ -83,6 +83,11 @@ export default function AdminSettings() {
                 <span>klst. fyrir ef</span>
                 <input className="input" style={{ width: 80 }} type="number" min={0} value={s.auto_cancel_min - 1} onChange={(e) => setS({ ...s, auto_cancel_min: Math.max(0, parseInt(e.target.value || '0', 10) || 0) + 1 })} aria-label="Fjöldi" />
                 <span>eða færri eru skráðir.</span>
+                <div className="row" style={{ flexWrap: 'wrap', width: '100%', marginTop: 6 }}>
+                  <span>Gildir líka ef einhver afbókar, þar til</span>
+                  <input className="input" style={{ width: 80 }} type="number" min={0} value={s.auto_cancel_stop} onChange={num('auto_cancel_stop')} aria-label="Mínútur" />
+                  <span>mín. eru í tímann. Eftir það heldur hann sér.</span>
+                </div>
                 <div className="muted" style={{ fontSize: 13, width: '100%' }}>Allir sem voru skráðir eða á biðlista fá tilkynningu, og þjálfarinn líka.</div>
               </div>
             )}
@@ -95,7 +100,7 @@ export default function AdminSettings() {
           {[
             [(opens < -1440 ? Math.ceil(-opens / 1440) + ' dögum áður ' : opens < 0 ? 'Daginn áður ' : '') + t(opens), 'Bókanir opna'],
             ['Kvöldið áður 20:00', 'Æfingin birtist í appinu'],
-            ...(s.auto_cancel_on ? [[t(cls - s.auto_cancel_minutes), `Tíminn fellur niður ef ${s.auto_cancel_min - 1} eða færri eru skráðir`]] : []),
+            ...(s.auto_cancel_on ? [[t(cls - s.auto_cancel_minutes), `Tíminn fellur niður ef ${s.auto_cancel_min - 1} eða færri eru skráðir (gildir þar til ${t(cls - s.auto_cancel_stop)})`]] : []),
             [t(cls - s.cancel_minutes), s.waitlist_on && s.waitlist_mode === 'auto' ? 'Biðlisti hættir að færast sjálfkrafa inn. Eftir þetta fær sá sem bókar fyrst laust pláss.' : 'Biðlisti hættir að færast inn'],
             [t(cls - s.close_minutes), s.close_minutes ? 'Bókanir loka' : 'Bókanir loka þegar tíminn byrjar'],
           ].map(([w, x]) => <div key={w + x} className="row" style={{ alignItems: 'flex-start', marginTop: 12, fontSize: 14 }}><b style={{ minWidth: 120, color: 'var(--accent)' }}>{w}</b><span>{x}</span></div>)}

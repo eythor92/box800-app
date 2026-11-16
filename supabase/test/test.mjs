@@ -137,6 +137,14 @@ ok(await cs(few) === true, '3 skráðir, 2 klst. fyrir → tíminn fellur niður
 ok(await cs(many) === false, '4 skráðir → tíminn heldur');
 ok(await cs(early) === false, '3+ klst. fyrir → ekki ákveðið enn');
 ok((await q(`select count(*)::int n from notifications where class_id = $1`, [few]))[0].n >= 3, 'Þeir skráðu fá tilkynningu');
+// Afbókun innan 2 klst. → 3 eftir → fellur niður; en síðustu 20 mín. heldur tíminn sér
+await as(members[3]); await q(`select cancel_booking($1)`, [many]);
+ok(await cs(many) === true, 'Afbókun 1 klst. 56 mín. fyrir → 3 eftir → tíminn fellur niður');
+await as(U.eythor);
+const late20 = await mk(15);
+for (let i = 0; i < 3; i++) await q(`insert into bookings (class_id, profile_id, status) values ($1, $2, 'booked')`, [late20, await pid(members[i])]);
+await q(`select auto_cancel_low()`);
+ok(await cs(late20) === false, '15 mín. í tímann → heldur sér þó 3 séu skráðir');
 
 // Skráðir og innskráning iðkanda sjálfs
 await as(members[2]);
