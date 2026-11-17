@@ -7,6 +7,7 @@ import resultsSql from '../../supabase/migrations/005_results.sql?raw'
 import profileSql from '../../supabase/migrations/007_profile.sql?raw'
 import dropinSql from '../../supabase/migrations/008_mynd_dropin.sql?raw'
 import accessSql from '../../supabase/migrations/009_adgangur.sql?raw'
+import titleSql from '../../supabase/migrations/010_nafn_tima.sql?raw'
 import demoSql from '../../supabase/demo/demo_seed.sql?raw'
 import type { Api, Profile, Settings, Workout } from './types'
 
@@ -33,6 +34,7 @@ export async function demoApi(): Promise<Api> {
   await db.exec(profileSql)
   await db.exec(dropinSql)
   await db.exec(accessSql)
+  await db.exec(titleSql)
   await db.exec(demoSql)
 
   let current: string | null = sessionStorageGet()
@@ -134,7 +136,8 @@ export async function demoApi(): Promise<Api> {
       const url = await new Promise<string>((ok) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.readAsDataURL(jpeg) })
       await write(`update profiles set avatar_url = $2 where id = $1`, [pid, url]); return url
     },
-    addClass: async (c) => { await write(`insert into classes (program_id, starts_at, ends_at, cap, coach_id) values ($1, $2, $3, $4, $5)`, [c.program_id, c.starts_at, c.ends_at, c.cap, c.coach_id]) },
+    addClass: async (c) => { await write(`insert into classes (program_id, starts_at, ends_at, cap, coach_id, title) values ($1, $2, $3, $4, $5, $6)`, [c.program_id, c.starts_at, c.ends_at, c.cap, c.coach_id, c.title]) },
+    renameClass: async (id, title) => { await write(`update classes set title = $2 where id = $1`, [id, title]) },
     staffAdd: (c, p, w) => val(`select staff_add($1, $2, $3)`, [c, p, w]),
     createDropin: (n, e, ph) => val(`select create_dropin($1, $2, $3)`, [n, e ?? null, ph ?? null]),
     hasAccess: () => one<{ a: boolean }>(`select has_access() a`).then((r) => !!r?.a),

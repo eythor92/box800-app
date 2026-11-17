@@ -21,6 +21,7 @@ try { await db.exec(fs.readFileSync(new URL('005_results.sql', dir), 'utf8')); }
 try { await db.exec(fs.readFileSync(new URL('007_profile.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 007:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('008_mynd_dropin.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 008:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('009_adgangur.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 009:', e.message, e.position); process.exit(1); }
+try { await db.exec(fs.readFileSync(new URL('010_nafn_tima.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 010:', e.message, e.position); process.exit(1); }
 console.log('Uppsetning tókst');
 
 // Notendur
@@ -187,6 +188,12 @@ ok((await q(`select * from class_list(now() - interval '1 day', now() + interval
 ok((await q(`select * from class_attendees($1)`, [wl.id])).length === 0, 'Án áskriftar: sést ekki hverjir eru skráðir');
 await as(members[1]);
 ok((await q(`select has_access() a`))[0].a === true && (await q(`select * from class_list(now() - interval '1 day', now() + interval '3 days')`)).length > 0, 'Með áskrift: sér tímatöflu');
+
+// Eigið nafn á tíma
+await as(U.eythor);
+await q(`update classes set title = 'Hreysti: Jólaæfing' where id = $1`, [wl.id]);
+await as(members[1]);
+ok((await q(`select program from class_list(now(), now() + interval '2 days') where id = $1`, [wl.id]))[0]?.program === 'Hreysti: Jólaæfing', 'Tími með eigin nafni birtist undir því nafni');
 
 // Skor
 const [bs] = await q(`select id from movements where name = 'Back Squat'`);

@@ -216,6 +216,8 @@ export interface Api {
   // þjálfari: bæta við í tíma eða á biðlista, og drop-in gestir
   staffAdd(classId: number, profileId: string, waitlist: boolean): Promise<string>
   /** Eigandi: stakur aukatími (ekki í föstu tímatöflunni) */
-  addClass(c: { program_id: number; starts_at: string; ends_at: string; cap: number | null; coach_id: string | null }): Promise<void>
+  addClass(c: { program_id: number; starts_at: string; ends_at: string; cap: number | null; coach_id: string | null; title: string | null }): Promise<void>
+  /** Eigandi: eigið nafn á tíma (null = nafn námskeiðsins) */
+  renameClass(id: number, title: string | null): Promise<void>
   createDropin(name: string, email?: string, phone?: string): Promise<string>
 }

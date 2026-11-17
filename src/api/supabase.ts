@@ -108,6 +108,7 @@ export function supabaseApi(url: string, key: string): Api {
       return url
     },
     async addClass(c) { must(await sb.from('classes').insert(c)) },
+    async renameClass(id, title) { must(await sb.from('classes').update({ title }).eq('id', id)) },
     staffAdd: (c, p, w) => rpc('staff_add', { p_class: c, p_profile: p, p_waitlist: w }),
     createDropin: (name, email, phone) => rpc('create_dropin', { p_name: name, p_email: email ?? null, p_phone: phone ?? null }),
     hasAccess: () => rpc('has_access'),
