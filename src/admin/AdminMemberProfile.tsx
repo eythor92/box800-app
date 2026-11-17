@@ -6,6 +6,7 @@ import { Icon } from '../components/Icon'
 import AvatarUpload from '../components/AvatarUpload'
 import { addDays, cap1, dayKey, dayLabel, dayStart, errMsg, hhmm, relDay, today } from '../util'
 import { kg } from '../score'
+import { PLAN_GROUPS, findPlan, planEnd } from '../plans'
 
 type Tab = 'info' | 'membership' | 'attendance' | 'results'
 
@@ -46,7 +47,7 @@ export default function AdminMemberProfile() {
   const [menu, setMenu] = useState(false)
   const [addCls, setAddCls] = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
-  const [nm, setNm] = useState<null | { plan: string; starts_on: string; ends_on: string }>(null)
+  const [nm, setNm] = useState<null | { plan: string; starts_on: string; ends_on: string; other?: boolean }>(null)
   const [busy, setBusy] = useState(false)
   useEffect(() => { if (p) setF({ ...p }) }, [p])
 
@@ -190,14 +191,24 @@ export default function AdminMemberProfile() {
           <h2 className="mp-h" style={{ marginTop: 0 }}>Áskrift</h2>
           <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', marginBottom: 10 }}>
             <div className="muted" style={{ fontSize: 14 }}>Greiðslur fara í gegnum Abler. Þangað til Abler er tengt skráir þú áskriftina hér, svo iðkandinn geti bókað.</div>
-            <button className="btn btn-primary btn-sm" onClick={() => setNm({ plan: '', starts_on: today(), ends_on: '' })}>+ Áskrift</button>
+            <button className="btn btn-primary btn-sm" onClick={() => setNm({ plan: '', starts_on: today(), ends_on: '', other: false })}>+ Áskrift</button>
           </div>
           {nm && (
             <form className="stat" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: 10, alignItems: 'end', marginBottom: 12 }}
               onSubmit={async (e) => { e.preventDefault(); if (!nm.plan.trim()) { toast('Nafn áskriftar vantar'); return } try { await api.addMembership({ profile_id: id, plan: nm.plan.trim(), starts_on: nm.starts_on, ends_on: nm.ends_on || null }); toast('Áskrift skráð'); setNm(null); refresh() } catch (er) { toast(errMsg(er)) } }}>
-              <label className="field"><span>Áskrift</span><input className="input" list="plans" value={nm.plan} onChange={(e) => setNm({ ...nm, plan: e.target.value })} placeholder="T.d. 12 mánaða samningur" autoFocus /></label>
-              <datalist id="plans">{['Mánaðaráskrift', '3 mánuðir', '12 mánaða samningur', '10 skipta kort', 'Mömmuhreysti', 'Námskeið', 'Þjálfari'].map((x) => <option key={x} value={x} />)}</datalist>
-              <label className="field"><span>Byrjar</span><input className="input" type="date" value={nm.starts_on} onChange={(e) => setNm({ ...nm, starts_on: e.target.value })} /></label>
+              <label className="field"><span>Áskrift</span>
+                {nm.other
+                  ? <input className="input" value={nm.plan} onChange={(e) => setNm({ ...nm, plan: e.target.value })} placeholder="Skrifaðu nafn áskriftar" autoFocus />
+                  : <select className="select" value={nm.plan} autoFocus onChange={(e) => {
+                      if (e.target.value === '__annad') { setNm({ ...nm, plan: '', other: true }); return }
+                      setNm({ ...nm, plan: e.target.value, ends_on: planEnd(findPlan(e.target.value), nm.starts_on) })
+                    }}>
+                      <option value="">Veldu áskrift…</option>
+                      {PLAN_GROUPS.map((g) => <optgroup key={g.label} label={g.label}>{g.plans.map((x) => <option key={x.name} value={x.name}>{x.name}</option>)}</optgroup>)}
+                      <option value="__annad">Annað (skrifa sjálf/ur)…</option>
+                    </select>}
+              </label>
+              <label className="field"><span>Byrjar</span><input className="input" type="date" value={nm.starts_on} onChange={(e) => setNm({ ...nm, starts_on: e.target.value, ends_on: findPlan(nm.plan) ? planEnd(findPlan(nm.plan), e.target.value) : nm.ends_on })} /></label>
               <label className="field"><span>Gildir til (autt = endurnýjast)</span><input className="input" type="date" value={nm.ends_on} onChange={(e) => setNm({ ...nm, ends_on: e.target.value })} /></label>
               <div className="row"><button type="button" className="btn btn-ghost btn-sm" onClick={() => setNm(null)}>Hætta við</button><button className="btn btn-primary btn-sm">Vista</button></div>
             </form>
