@@ -53,6 +53,7 @@ export default function ClassSheet({ c, onClose }: { c: ClassRow; onClose: () =>
   }
 
   const { data: people } = useData((a) => a.attendees(c.id), [c.id])
+  const { data: queue } = useData((a) => (c.waiting > 0 ? a.waitlist(c.id) : Promise.resolve([])), [c.id, c.waiting])
   const meIn = people?.find((p) => p.is_me)
   const now = Date.now()
   const canSignIn = st.booked && !c.cancelled && !meIn?.checked_in && now >= +new Date(c.starts_at) - 30 * 60000 && now <= +new Date(c.ends_at) + 30 * 60000
@@ -79,7 +80,7 @@ export default function ClassSheet({ c, onClose }: { c: ClassRow; onClose: () =>
         <button className="cs-go" onClick={() => { onClose(); nav(`/aefing?p=${c.program_id}&d=${dayKey(d)}`) }}>Skoða æfinguna<Icon name="dumb" size={22} /></button>
 
         <div className="cs-att">
-          <span>Skráðir</span><Icon name="people" size={20} /><b>{people?.length ?? c.booked} | {c.cap}</b>{c.waiting > 0 && <span className="muted" style={{ fontWeight: 500 }}>· {c.waiting} á biðlista</span>}
+          <span>Skráðir</span><Icon name="people" size={20} /><b>{people?.length ?? c.booked} | {c.cap}</b>
         </div>
         {!people && <div className="spinner" style={{ margin: '16px auto' }} />}
         {people?.length === 0 && <div className="muted" style={{ padding: '6px 0 4px' }}>Enginn skráður enn. Vertu {kyn(me.gender, 'fyrst', 'fyrstur')}!</div>}
@@ -92,6 +93,19 @@ export default function ClassSheet({ c, onClose }: { c: ClassRow; onClose: () =>
             </div>
           ))}
         </div>
+        {queue && queue.length > 0 && (
+          <>
+            <div className="cs-att" style={{ marginTop: 14 }}><span>Biðlisti</span><b>+{queue.length}</b></div>
+            <div className="cs-list">
+              {queue.map((p) => (
+                <div key={p.profile_id} className="row" style={{ gap: 14, padding: '7px 0' }}>
+                  <Avatar src={p.avatar_url} name={p.full_name} size={46} />
+                  <span className="grow" style={{ fontSize: 17, fontWeight: p.is_me ? 700 : 400 }}>{p.pos}. {p.full_name}{p.is_me ? ' (þú)' : ''}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
         <div className="cs-foot">
           {note && <div className={noteCls || 'stat'} style={{ marginBottom: 10, fontSize: 14, fontWeight: 600 }}>{note}</div>}

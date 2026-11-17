@@ -26,6 +26,7 @@ try { await db.exec(fs.readFileSync(new URL('011_fjarvist.sql', dir), 'utf8')); 
 try { await db.exec(fs.readFileSync(new URL('012_innsyn.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 012:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('013_skilabod.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 013:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('014_samstarf.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 014:', e.message, e.position); process.exit(1); }
+try { await db.exec(fs.readFileSync(new URL('015_bidlisti.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 015:', e.message, e.position); process.exit(1); }
 console.log('Uppsetning tókst');
 
 // Notendur
@@ -58,6 +59,7 @@ await as(members[0]); ok(await q(`select book_class($1) s`, [C]).then(r => r[0].
 await as(members[1]); ok(await q(`select book_class($1) s`, [C]).then(r => r[0].s) === 'booked', 'm1 bókar → booked (fullt núna)');
 await as(members[2]); ok(await q(`select book_class($1) s`, [C]).then(r => r[0].s) === 'waitlist', 'm2 → biðlisti');
 await as(members[3]); ok(await q(`select book_class($1) s`, [C]).then(r => r[0].s) === 'waitlist', 'm3 → biðlisti');
+{ const wl = await q(`select * from class_waitlist($1)`, [C]); ok(wl.length === 2 && wl[1].pos === 2 && wl[1].is_me, 'Biðlisti sýnilegur með númerum'); }
 await as(members[5]); await expectErr(() => q(`select book_class($1)`, [C]), 'áskrift', 'm5 án áskriftar fær ekki að bóka');
 
 await as(members[3]);

@@ -12,6 +12,7 @@ import noShowSql from '../../supabase/migrations/011_fjarvist.sql?raw'
 import insightSql from '../../supabase/migrations/012_innsyn.sql?raw'
 import supportSql from '../../supabase/migrations/013_skilabod.sql?raw'
 import promoSql from '../../supabase/migrations/014_samstarf.sql?raw'
+import waitSql from '../../supabase/migrations/015_bidlisti.sql?raw'
 import demoSql from '../../supabase/demo/demo_seed.sql?raw'
 import type { Api, Profile, Settings, Workout } from './types'
 
@@ -43,6 +44,7 @@ export async function demoApi(): Promise<Api> {
   await db.exec(insightSql)
   await db.exec(supportSql)
   await db.exec(promoSql)
+  await db.exec(waitSql)
   await db.exec(demoSql)
 
   let current: string | null = sessionStorageGet()
@@ -93,6 +95,7 @@ export async function demoApi(): Promise<Api> {
     setCoach: async (c, coach) => { await write(`select set_class_coach($1, $2)`, [c, coach]) },
     checkIn: async (c, p, on) => { await write(`select check_in($1, $2, $3)`, [c, p, on]) },
     attendees: (c) => rows(`select * from class_attendees($1)`, [c]),
+    waitlist: (c) => rows(`select * from class_waitlist($1)`, [c]),
     selfCheckIn: async (c) => { await write(`select self_check_in($1)`, [c]) },
     kioskSignIn: async (c, p) => { await write(`select kiosk_sign_in($1, $2)`, [c, p]) },
     staff: () => rows<Profile>(`select * from profiles where role in ('coach','owner') order by full_name`),
