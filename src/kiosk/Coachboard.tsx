@@ -6,7 +6,7 @@ import { addDays, cap1, dayKey, dayLabel, dayStart, errMsg, hhmm, initials, shor
 import { currentClass, useNow } from './shared'
 import { PanelHead, type PanelProps } from './panel'
 
-/** Coachboard (eins og „Results“ í Kiosk+): tímar dagsins, innskráning, listi og myndir af mættum */
+/** Innskráning á stöðvarskjá: tímar dagsins, innskráning, listi og myndir af mættum */
 export default function Coachboard(pp: PanelProps) {
   const { api, toast, refresh } = useApp()
   const now = useNow(20000)
@@ -52,7 +52,7 @@ export default function Coachboard(pp: PanelProps) {
 
   return (
     <div className="kp-panel">
-      <PanelHead {...pp} title="Coachboard" sub={
+      <PanelHead {...pp} title="Innskráning" sub={
         <div className="row" style={{ gap: 2 }}>
           <button className="kp-mini" aria-label="Fyrri dagur" disabled={day <= today} onClick={() => { setDay(addDays(day, -1)); setPicked(null) }}><Icon name="back" size={18} /></button>
           <span className="kp-date">{day === today ? 'Í dag, ' + dayLabel(day) : cap1(dayLabel(day, true))}</span>

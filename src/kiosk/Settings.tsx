@@ -48,7 +48,7 @@ function Calendar({ value, onPick }: { value: string; onPick: (d: string) => voi
 }
 
 /**
- * Stillingar glugga, eins og í Kiosk+: SKJÁR, DAGSETNING, NÁMSKEIÐ og „Nota“.
+ * Stillingar glugga á stöðvarskjá: SKJÁR, DAGSETNING, NÁMSKEIÐ og „Nota“.
  * Breytingar taka ekki gildi fyrr en ýtt er á Nota.
  */
 export function PanelSettings({ cfg, day, programs, autoName, onApply, onClose, startOpen }: {
@@ -65,7 +65,7 @@ export function PanelSettings({ cfg, day, programs, autoName, onApply, onClose, 
     <>
       <button className="ks-back" aria-label="Loka stillingum" onClick={onClose} />
       <div className="ks" role="dialog" aria-label="Stillingar glugga">
-        <Section label="SKJÁR" value={<>{PANEL_NAMES[d.type]}<small>{d.type === 'workout' ? 'Sýnir æfingu dagsins' : 'Innskráning og mæting'}</small></>} open={open === 'type'} onToggle={() => tog('type')}>
+        <Section label="SKJÁR" value={<>{PANEL_NAMES[d.type]}<small>{d.type === 'workout' ? 'Sýnir æfingu dagsins' : 'Iðkendur skrá sig inn og mæting'}</small></>} open={open === 'type'} onToggle={() => tog('type')}>
           <div className="ks-btns">
             {(Object.keys(PANEL_NAMES) as PanelType[]).map((t) => <button key={t} className={d.type === t ? 'on' : ''} onClick={() => setD({ ...d, type: t })}>{PANEL_NAMES[t]}</button>)}
           </div>

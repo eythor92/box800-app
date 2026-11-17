@@ -10,14 +10,14 @@ import WorkoutPanel from './WorkoutPanel'
 interface Layout { panels: PanelCfg[]; split: number; rail: boolean }
 const P = (type: PanelType, zoom = 1): PanelCfg => ({ type, zoom, prog: 0, autoDay: true })
 const TEMPLATES: { id: string; name: string; desc: string; panels: PanelCfg[] }[] = [
-  { id: 'coachboard', name: 'Coachboard', desc: 'Innskráning og mæting', panels: [P('coachboard')] },
+  { id: 'innskraning', name: 'Innskráning', desc: 'Iðkendur skrá sig inn, mæting', panels: [P('coachboard')] },
   { id: 'aefing', name: 'Æfing', desc: 'Æfing dagsins á sjónvarp', panels: [P('workout')] },
-  { id: 'baedi', name: 'Coachboard + æfing', desc: 'Tveir gluggar hlið við hlið', panels: [P('coachboard'), P('workout', 0.8)] },
+  { id: 'baedi', name: 'Innskráning + æfing', desc: 'Tveir gluggar hlið við hlið', panels: [P('coachboard'), P('workout', 0.8)] },
 ]
 
 /**
- * Kiosk+: hvert tæki á stöðinni (tölva, sjónvarp) velur sína uppsetningu og man hana.
- * Hægt að opna beint: #/kiosk?t=coachboard, #/kiosk?t=aefing, #/kiosk?t=baedi
+ * Stöðvarskjár: hvert tæki á stöðinni (tölva, sjónvarp) velur sína uppsetningu og man hana.
+ * Hægt að opna beint: #/kiosk?t=innskraning, #/kiosk?t=aefing, #/kiosk?t=baedi
  */
 export default function KioskPlus() {
   const { me } = useApp()
@@ -30,7 +30,7 @@ export default function KioskPlus() {
   useEffect(() => { const f = () => setFs(!!document.fullscreenElement); document.addEventListener('fullscreenchange', f); return () => document.removeEventListener('fullscreenchange', f) }, [])
 
   const use = (id: string) => {
-    const t = TEMPLATES.find((x) => x.id === id)
+    const t = TEMPLATES.find((x) => x.id === (id === 'coachboard' ? 'innskraning' : id))
     if (t) { setLayout({ ...layout, panels: t.panels.map((p) => ({ ...p })), split: t.panels.length > 1 ? 0.62 : layout.split }); setSetup(false) }
   }
   useEffect(() => {
@@ -66,7 +66,7 @@ export default function KioskPlus() {
         {!panels && (
           <div className="kp-splash">
             <img src="myndir/logo-white.png" alt="BOX800" />
-            <div className="muted" style={{ marginTop: 24, fontSize: 15, letterSpacing: 2, fontWeight: 800 }}>KIOSK+</div>
+            <div className="muted" style={{ marginTop: 24, fontSize: 15, letterSpacing: 2, fontWeight: 800 }}>STÖÐVARSKJÁR</div>
           </div>
         )}
         {panels?.map((p, i) => {
@@ -83,9 +83,9 @@ export default function KioskPlus() {
       </div>
 
       {showSetup && (
-        <aside className="kp-setup" aria-label="Uppsetning Kiosk+">
+        <aside className="kp-setup" aria-label="Uppsetning stöðvarskjás">
           <div className="row" style={{ justifyContent: 'space-between' }}>
-            <b style={{ fontSize: 18 }}>Settu upp Kiosk+ skjáinn</b>
+            <b style={{ fontSize: 18 }}>Settu upp stöðvarskjáinn</b>
             {panels && <button className="kp-mini" aria-label="Loka" onClick={() => setSetup(false)}><Icon name="x" /></button>}
           </div>
           <p className="muted" style={{ fontSize: 14 }}>Veldu uppsetningu fyrir þennan skjá. Tækið man valið, svo næst opnast hún sjálfkrafa.</p>
@@ -94,19 +94,19 @@ export default function KioskPlus() {
             {TEMPLATES.map((t) => (
               <button key={t.id} className="kp-tpl" onClick={() => use(t.id)}>
                 <b>{t.name}</b>
-                <span className="kp-thumb">{t.panels.map((p, i) => <span key={i} style={{ flex: i === 0 && t.panels.length > 1 ? 1.6 : 1 }}>{p.type === 'workout' ? 'Æ' : 'C'}</span>)}</span>
+                <span className="kp-thumb">{t.panels.map((p, i) => <span key={i} style={{ flex: i === 0 && t.panels.length > 1 ? 1.6 : 1 }}>{p.type === 'workout' ? 'Æ' : 'I'}</span>)}</span>
                 <small>{t.panels.length} {t.panels.length === 1 ? 'gluggi' : 'gluggar'} · {t.desc}</small>
               </button>
             ))}
           </div>
           <div className="muted" style={{ fontSize: 13, marginTop: 18 }}>
-            Bein slóð fyrir sjónvarp: <code>#/kiosk?t=aefing</code><br />Fyrir innskráningartölvu: <code>#/kiosk?t=coachboard</code>
+            Bein slóð fyrir sjónvarp: <code>#/kiosk?t=aefing</code><br />Fyrir innskráningartölvu: <code>#/kiosk?t=innskraning</code>
           </div>
         </aside>
       )}
 
       {rail ? (
-        <nav className="kp-rail" aria-label="Kiosk+ valmynd">
+        <nav className="kp-rail" aria-label="Valmynd stöðvarskjás">
           <button onClick={() => setSetup(!setup)}><Icon name="gear" /><span>Uppsetning</span></button>
           <button onClick={add} disabled={!panels || panels.length >= 2}><Icon name="plus" /><span>Bæta við glugga</span></button>
           <button onClick={() => { setLayout({ ...layout, panels: null }); setSetup(true) }}><Icon name="grid" /><span>Nýtt</span></button>

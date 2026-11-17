@@ -231,7 +231,7 @@ a { color: var(--accent); }
 .toast { background: var(--accent); color: var(--accent-ink); }
 
 /* ==========================================
-   KIOSK+ (eins og í Wodify): gluggar, hliðarstika og Coachboard
+   STÖÐVARSKJÁR: gluggar, hliðarstika og innskráning
    ========================================== */
 .kp { position: fixed; inset: 0; display: flex; background: var(--bg); overflow: hidden; }
 .kp-stage { flex: 1; min-width: 0; display: flex; position: relative; }
@@ -326,7 +326,7 @@ a { color: var(--accent); }
   .kp-zoom input[type=range], .kp-zoom .pct { display: none; }
 }
 
-/* Stillingar glugga (Kiosk+) */
+/* Stillingar glugga (stöðvarskjár) */
 .kp-panel { position: relative; }
 .kp-prog { display: inline-flex; align-items: center; gap: 7px; }
 .ks-back { position: absolute; inset: 0; z-index: 30; background: rgba(0,0,0,.45); }

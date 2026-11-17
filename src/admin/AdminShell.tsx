@@ -7,7 +7,7 @@ const GROUPS: { id: string; label: string; icon: string; kids: [string, string][
   { id: 'aefingar', label: 'ÆFINGAR', icon: 'dumb', kids: [['/stjorn/aefingar', 'Æfingar dagsins']] },
   { id: 'timar', label: 'TÍMAR', icon: 'cal', kids: [['/stjorn/timar', 'Dagatal og fjöldi'], ['/stjorn/stillingar', 'Bókunarstillingar']] },
   { id: 'idkendur', label: 'IÐKENDUR', icon: 'people', kids: [['/stjorn/idkendur', 'Allir iðkendur']] },
-  { id: 'kiosk', label: 'VIÐBÆTUR', icon: 'grid', kids: [['/kiosk', 'Kiosk+']] },
+  { id: 'kiosk', label: 'VIÐBÆTUR', icon: 'grid', kids: [['/kiosk', 'Stöðvarskjár']] },
 ]
 
 export default function AdminShell() {

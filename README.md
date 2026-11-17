@@ -27,8 +27,8 @@ npm run dev        # prófunarútgáfa ef .env.local vantar
 node supabase/test/test.mjs
 ```
 
-## Kiosk+ á stöðinni
-- `#/kiosk` opnar Kiosk+: veldu sniðmát (Coachboard, Æfing, eða bæði hlið við hlið). Tækið man valið.
-- Beinar slóðir: `#/kiosk?t=coachboard` (innskráningartölva), `#/kiosk?t=aefing` (sjónvarp), `#/kiosk?t=baedi`.
+## Stöðvarskjár
+- `#/kiosk` opnar stöðvarskjáinn: veldu sniðmát (Innskráning, Æfing, eða bæði hlið við hlið). Tækið man valið.
+- Beinar slóðir: `#/kiosk?t=innskraning` (innskráningartölva), `#/kiosk?t=aefing` (sjónvarp), `#/kiosk?t=baedi`.
 - Hver gluggi hefur stærðarsleða, og hægt er að draga skilrúmið á milli glugga.
 - Þarf innskráðan þjálfara eða eiganda. Ef 001 var keyrt áður en kiosk kom: keyra `004_kiosk.sql`.

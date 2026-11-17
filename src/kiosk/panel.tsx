@@ -9,9 +9,9 @@ export interface PanelProps {
   setCfg: (c: PanelCfg) => void
   onRemove?: () => void
 }
-export const PANEL_NAMES: Record<PanelType, string> = { coachboard: 'Coachboard', workout: 'Æfing' }
+export const PANEL_NAMES: Record<PanelType, string> = { coachboard: 'Innskráning', workout: 'Æfing' }
 
-/** Haus á glugga: „⠿ Coachboard ▾“, dagsetning, stærðarsleði og loka, eins og í Kiosk+ */
+/** Haus á glugga: „⠿ Innskráning ▾“, dagsetning, stærðarsleði og loka */
 export function PanelHead({ title, sub, cfg, setCfg, onRemove, onSettings }: PanelProps & { title: string; sub?: ReactNode; onSettings?: () => void }) {
   const [open, setOpen] = useState(false)
   const z = cfg.zoom

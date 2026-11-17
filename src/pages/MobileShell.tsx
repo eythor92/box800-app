@@ -98,7 +98,7 @@ export default function MobileShell() {
             {access !== false && <Link to="/arangur">Árangur</Link>}
             <Link to="/profill">Prófíllinn minn</Link>
             <a href={BUY_URL} target="_blank" rel="noreferrer">Kaupa kort eða áskrift</a>
-            {me.role !== 'member' && <Link to="/kiosk">Kiosk+</Link>}
+            {me.role !== 'member' && <Link to="/kiosk">Stöðvarskjár</Link>}
             {me.role === 'owner' && <Link to="/stjorn">Stjórnborð</Link>}
             <button className="link" onClick={() => api.signOut()}>Skrá út</button>
             <div className="muted" style={{ marginTop: 'auto', fontSize: 13 }}>BOX800 · Eyravegur 57 · Selfossi{api.demo ? ' · prófunarútgáfa' : ''}</div>
