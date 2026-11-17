@@ -7,7 +7,7 @@ insert into auth.users (id, email) values
 
 update profiles set role = 'owner', full_name = 'Eyþór Stefánsson', avatar_url = 'myndir/eythor.jpg' where email = 'eigandi@box800.demo';
 update profiles set role = 'coach', full_name = 'Alda Kristinsdóttir', avatar_url = 'myndir/alda.jpg' where email = 'alda@box800.demo';
-update profiles set full_name = 'Sigrún Prufa' where email = 'idkandi@box800.demo';
+update profiles set full_name = 'Jón Jónsson' where email = 'idkandi@box800.demo';
 
 insert into profiles (full_name, role, avatar_url) values
   ('Valgerður Jónsdóttir', 'coach', 'myndir/valla.jpg'),
@@ -88,7 +88,7 @@ update workouts w set components = jsonb_build_array(jsonb_build_object(
     'sets', 1, 'reps', 5, 'body', E'Á hverjum 3:00 x 5\n5 back squat\n20/20s copenhagen plank', 'scoring', 'Þyngd (kg)')) || w.components
 from programs p where p.id = w.program_id and p.name = 'Hreysti' and w.day = current_date;
 
--- Saga Sigrúnar (prufuiðkanda)
+-- Saga Jóns (prufuiðkanda)
 insert into results (profile_id, day, movement_id, sets, reps, weight, kind, score_num)
 select (select id from profiles where email = 'idkandi@box800.demo'), current_date - d, m.id, 1, r, w, 'weight', w
 from (values

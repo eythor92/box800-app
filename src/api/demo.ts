@@ -13,7 +13,7 @@ import type { Api, Profile, Settings, Workout } from './types'
 const USERS = [
   { label: 'Eyþór (eigandi)', email: 'eigandi@box800.demo', id: '00000000-0000-0000-0000-000000000001' },
   { label: 'Alda (þjálfari)', email: 'alda@box800.demo', id: '00000000-0000-0000-0000-000000000002' },
-  { label: 'Sigrún (iðkandi)', email: 'idkandi@box800.demo', id: '00000000-0000-0000-0000-000000000003' },
+  { label: 'Jón Jónsson (iðkandi)', email: 'idkandi@box800.demo', id: '00000000-0000-0000-0000-000000000003' },
   { label: 'Nýr (án áskriftar)', email: 'nyr@box800.demo', id: '00000000-0000-0000-0000-000000000004' },
 ]
 
