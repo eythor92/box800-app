@@ -3,12 +3,12 @@ import type { Workout, WorkoutComponent } from '../api'
 import { useApp, useData } from '../ctx'
 import { Icon } from '../components/Icon'
 import { WorkoutRender } from '../pages/WorkoutView'
-import { addDays, cap1, dayLabel, errMsg, mondayOf, today } from '../util'
+import { addDays, cap1, dayLabel, errMsg, mondayOf, parseLines, today } from '../util'
 import { newKey } from '../score'
 
 const SCORING = ['Hak (lokið)', 'Tími', 'Umferðir + endurtekningar', 'Endurtekningar', 'Þyngd (kg)', 'Kaloríur', 'Vegalengd (m)', 'Engin skráning']
 const SCALING = ['Engin', 'Scaled / Rx', 'Scaled / Rx / Rx+']
-const LABEL: Record<string, string> = { metcon: 'ÆFING (EINU SINNI)', header: 'KAFLAFYRIRSÖGN', lift: 'LYFTA (SKOR SKRÁÐ OG VISTAÐ Í SÖGU)', video: 'MYNDBAND', image: 'MYND' }
+const LABEL: Record<string, string> = { metcon: 'ÆFING', header: 'FYRIRSÖGN', lift: 'LYFTA', video: 'MYNDBAND', image: 'MYND' }
 const MODES: [Workout['publish_mode'], string][] = [['evening_before', 'Kvöldið áður kl. 20:00'], ['now', 'Strax'], ['morning', 'Sama dag kl. 05:00']]
 
 export default function AdminWorkouts() {
@@ -21,6 +21,11 @@ export default function AdminWorkouts() {
   const [chooser, setChooser] = useState(false)
   const [libQ, setLibQ] = useState('')
   const [saving, setSaving] = useState(false)
+  // Hlutar sem eru opnir í ritli. Vistaðir hlutar sýnast eins og iðkendur sjá þá; smellt á titil til að breyta.
+  const [openKeys, setOpenKeys] = useState<Set<string>>(new Set())
+  const kOf = (c: WorkoutComponent, i: number) => c.key ?? 'i' + i
+  const isOpen = (c: WorkoutComponent, i: number) => openKeys.has(kOf(c, i))
+  const toggle = (c: WorkoutComponent, i: number, on: boolean) => setOpenKeys((o) => { const n = new Set(o); if (on) n.add(kOf(c, i)); else n.delete(kOf(c, i)); return n })
   const week = mondayOf(day)
   const { data: programs } = useData((a) => a.programs())
   const { data: movements, reload: reloadMov } = useData((a) => a.movements())
@@ -32,14 +37,14 @@ export default function AdminWorkouts() {
   // Hlaða æfingu í ritil þegar skipt er um dag/námskeið (ekki yfirskrifa óvistaðar breytingar)
   useEffect(() => {
     if (prog == null) return
-    setDraft(saved ? structuredClone(saved) : null); setDirty(false)
+    setDraft(saved ? structuredClone(saved) : null); setDirty(false); setOpenKeys(new Set())
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prog, day, saved?.id, saved?.status])
 
   const w: Workout = draft ?? { program_id: prog ?? 0, day, components: [], status: 'draft', publish_mode: 'evening_before' }
   const set = (fn: (w: Workout) => void) => { const n = structuredClone(w); fn(n); setDraft(n); setDirty(true) }
   const setC = (i: number, patch: Partial<WorkoutComponent>) => set((n) => { n.components[i] = { ...n.components[i], ...patch } })
-  const add = (c: WorkoutComponent) => { set((n) => { n.components.push({ ...c, key: newKey() }) }); setChooser(false); setLibQ('') }
+  const add = (c: WorkoutComponent) => { const key = newKey(); set((n) => { n.components.push({ ...c, key }) }); setOpenKeys((o) => new Set(o).add(key)); setChooser(false); setLibQ('') }
 
   function toggleBold(i: number) {
     const el = taRefs.current[i], body = w.components[i].body ?? ''
@@ -60,8 +65,8 @@ export default function AdminWorkouts() {
     setSaving(true)
     try {
       await api.saveWorkout({ ...w, program_id: prog, day, status, components: w.components.map((c) => (c.key ? c : { ...c, key: newKey() })) })
-      setDirty(false); refresh()
-      const when = status === 'draft' ? 'Vistað sem drög' : w.publish_mode === 'now' ? 'Birt – iðkendur sjá æfinguna núna' : 'Birt – ' + publishText(w.publish_mode, day).replace('Birtist iðkendum', 'sést')
+      setDirty(false); setOpenKeys(new Set()); refresh()
+      const when = status === 'draft' ? 'Vistað sem drög' : w.publish_mode === 'now' ? 'Vistað – iðkendur sjá æfinguna núna' : 'Vistað – ' + publishText(w.publish_mode, day).replace('Birtist iðkendum', 'sést')
       toast(when)
     } catch (e) { toast(errMsg(e)) } finally { setSaving(false) }
   }
@@ -154,6 +159,8 @@ export default function AdminWorkouts() {
                   <button className="icon-btn" style={{ width: 36, height: 36, color: 'var(--danger)' }} aria-label="Eyða hluta" onClick={() => set((n) => { n.components.splice(i, 1) })}><Icon name="trash" size={18} /></button>
                 </div>
 
+                {!isOpen(c, i) && <CompPreview c={c} onOpen={() => toggle(c, i, true)} />}
+                {isOpen(c, i) && <>
                 {c.type === 'header' && (
                   <label className="field" style={{ marginTop: 8 }}><span>Fyrirsögn kafla</span>
                     <input className="input" value={c.title ?? ''} onChange={(e) => setC(i, { title: e.target.value })} placeholder="T.d. Upphitun" style={{ color: 'var(--accent)', fontWeight: 700 }} />
@@ -207,6 +214,10 @@ export default function AdminWorkouts() {
                     <label className="field" style={{ marginTop: 10 }}><span>{c.type === 'video' ? 'Slóð á myndband (YouTube, Instagram, Vimeo)' : 'Slóð á mynd'}</span><input className="input" value={c.url ?? ''} onChange={(e) => setC(i, { url: e.target.value })} placeholder="https://" /></label>
                   </>
                 )}
+                <div className="row" style={{ justifyContent: 'flex-end', marginTop: 12 }}>
+                  <button className="btn btn-outline btn-sm" onClick={() => toggle(c, i, false)}>Loka</button>
+                </div>
+                </>}
               </div>
             ))}
 
@@ -224,7 +235,7 @@ export default function AdminWorkouts() {
                   </div>
                   <div className="row">
                     <button className="btn btn-ghost" disabled={saving} onClick={() => save('draft')}>Vista sem drög</button>
-                    <button className="btn btn-primary" disabled={saving} onClick={() => save('published')}>Birta</button>
+                    <button className="btn btn-primary" disabled={saving} onClick={() => save('published')}>Vista</button>
                   </div>
                 </div>
               </>
@@ -288,4 +299,19 @@ function publishText(mode: Workout['publish_mode'], day: string): string {
   if (mode === 'now') return 'Iðkendur sjá æfinguna um leið og þú birtir hana.'
   if (mode === 'morning') return `Birtist iðkendum ${dayLabel(day)} kl. 05:00.`
   return `Birtist iðkendum ${dayLabel(addDays(day, -1))} kl. 20:00.`
+}
+
+/** Hluti sýndur eins og iðkendur sjá hann. Smellt á titilinn til að breyta. */
+function CompPreview({ c, onOpen }: { c: WorkoutComponent; onOpen: () => void }) {
+  const title = c.type === 'header' ? (c.title || 'Kaflafyrirsögn') : [c.prefix, c.title].filter(Boolean).join('. ') || (c.type === 'lift' ? 'Lyfta' : 'Æfing')
+  const sub = c.type === 'lift' ? `${c.sets ?? 1} x ${c.reps ?? 5}` : c.type === 'metcon' && c.scoring && c.scoring !== 'Engin skráning' && c.scoring !== 'Hak (lokið)' ? `Skor: ${c.scoring}${c.scoring === 'Tími' && (c.rounds ?? 1) > 1 ? ` · ${c.rounds} umferðir` : ''}` : null
+  return (
+    <div style={{ marginTop: 6 }}>
+      <button type="button" onClick={onOpen} title="Smelltu til að breyta" style={{ color: 'var(--accent)', fontWeight: 800, fontSize: c.type === 'header' ? 22 : 19, textAlign: 'left', textDecoration: 'underline', textDecorationColor: 'rgba(198,204,214,.35)', textUnderlineOffset: 4, padding: '4px 0' }}>{title}</button>
+      {sub && <div style={{ fontStyle: 'italic', color: 'var(--text-2)', marginTop: 2 }}>{sub}</div>}
+      {c.type !== 'header' && parseLines(c.body).filter((l) => l.t.trim() || l.b).map((l, j) => <div key={j} style={{ fontWeight: l.b ? 800 : 400, marginTop: 2 }}>{l.t}</div>)}
+      {c.comment && <div className="muted" style={{ fontStyle: 'italic', marginTop: 8, fontSize: 14 }}>{c.comment}</div>}
+      {(c.type === 'video' || c.type === 'image') && c.url && <div className="muted ellipsis" style={{ fontSize: 13, marginTop: 4 }}>{c.url}</div>}
+    </div>
+  )
 }
