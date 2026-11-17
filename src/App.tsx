@@ -23,6 +23,12 @@ import NoAccess from './pages/NoAccess'
 import LiftHistory from './pages/LiftHistory'
 import Leaderboard from './pages/Leaderboard'
 
+/** Hreinsar gamla útgáfu úr geymslu vafrans og endurhleður (sjá index.html) */
+function fixCache(force: boolean) {
+  const f = (window as unknown as { __box800Fix?: (force: boolean) => void }).__box800Fix
+  if (f) f(force); else location.reload()
+}
+
 export default function App() {
   const [api, setApi] = useState<Api | null>(null)
   const [me, setMe] = useState<Profile | null | undefined>(undefined)
@@ -39,7 +45,13 @@ export default function App() {
   }, [])
 
   useEffect(() => {
-    getApi().then((a) => { setApi(a); loadMe(a).catch((e) => setFatal(String(e.message ?? e))) }, (e) => setFatal(String(e?.message ?? e)))
+    const fail = (e: unknown) => {
+      const m = String((e as Error)?.message ?? e)
+      setFatal(m)
+      // Gömul útgáfa í geymslu reyndi að sækja skrá sem er ekki lengur til: hreinsa og endurhlaða
+      if (/import|module|dynamically|Failed to fetch/i.test(m)) fixCache(false)
+    }
+    getApi().then((a) => { setApi(a); loadMe(a).catch(fail); setTimeout(() => { try { sessionStorage.removeItem('box800-fixed') } catch { /* */ } }, 5000) }, fail)
   }, [loadMe])
 
   useEffect(() => {
@@ -60,7 +72,12 @@ export default function App() {
     return () => clearInterval(t)
   }, [api, me, access, loadMe])
 
-  if (fatal) return <div className="auth"><div className="error">Villa: {fatal}</div></div>
+  if (fatal) return (
+    <div className="auth"><div className="error">
+      {/import|module|fetch/i.test(fatal) ? 'Ný útgáfa af appinu er komin. Augnablik…' : 'Villa: ' + fatal}
+      <button className="btn btn-primary btn-block" style={{ marginTop: 14 }} onClick={() => fixCache(true)}>Hlaða appinu upp á nýtt</button>
+    </div></div>
+  )
   if (!api || me === undefined) return <div className="auth"><div><img src="myndir/logo-white.png" alt="BOX800" style={{ height: 60, display: 'block', margin: '0 auto' }} /><div className="spinner" /></div></div>
   if (!me) return <>{<Login api={api} />}{msg && <div className="toast" role="status">{msg}</div>}</>
 

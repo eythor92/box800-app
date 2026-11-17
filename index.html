@@ -17,13 +17,14 @@
       // Vörn: ef gömul útgáfa í geymslu vafrans kemur í veg fyrir að appið hlaðist,
       // hreinsum við geymsluna og endurhlöðum einu sinni.
       (function () {
-        function fix() {
-          try { if (sessionStorage.getItem('box800-fixed')) return; sessionStorage.setItem('box800-fixed', '1') } catch (e) {}
+        function fix(force) {
+          try { if (!force && sessionStorage.getItem('box800-fixed')) return; sessionStorage.setItem('box800-fixed', '1') } catch (e) {}
           var jobs = [];
           if (navigator.serviceWorker) jobs.push(navigator.serviceWorker.getRegistrations().then(function (rs) { return Promise.all(rs.map(function (r) { return r.unregister() })) }));
           if (window.caches) jobs.push(caches.keys().then(function (ks) { return Promise.all(ks.map(function (k) { return caches.delete(k) })) }));
           Promise.all(jobs).catch(function () {}).then(function () { location.reload() });
         }
+        window.__box800Fix = fix;
         window.addEventListener('error', function (e) { if (e.target && (e.target.tagName === 'SCRIPT' || e.target.tagName === 'LINK')) fix() }, true);
         window.addEventListener('unhandledrejection', function (e) { if (String(e.reason && e.reason.message).match(/dynamically imported module|Failed to fetch|Importing a module/)) fix() });
         setTimeout(function () { var r = document.getElementById('root'); if (r && !r.children.length) fix() }, 10000);
