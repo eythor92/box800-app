@@ -119,6 +119,7 @@ export interface MemberRow {
 }
 
 export interface Notification { id: number; title: string; body: string | null; created_at: string; read_at: string | null; kind?: string | null }
+export interface SupportMessage { id: number; profile_id: string; full_name: string; email: string | null; phone: string | null; avatar_url: string | null; what: string | null; body: string | null; created_at: string; has_access: boolean }
 export interface Attendance { class_id: number; program: string; starts_at: string; checked_in: boolean }
 
 export interface NewMember {
@@ -194,6 +195,11 @@ export interface Api {
   markNotificationsRead(): Promise<void>
   markNotificationRead(id: number): Promise<void>
   noShowCount(profileId: string): Promise<number>
+  // skilaboð frá þeim sem komast ekki inn
+  sendSupport(what: string, phone: string, body: string): Promise<void>
+  supportPending(): Promise<string | null>
+  supportInbox(): Promise<SupportMessage[]>
+  supportHandled(id: number): Promise<void>
   // innsýn (aðeins eigandi)
   insights(from: string, to: string): Promise<{ kind: 'attend' | 'noshow' | 'pr'; profile_id: string; full_name: string; avatar_url: string | null; n: number }[]>
   insightsSummary(from: string, to: string): Promise<{ visits: number; active_members: number; no_shows: number; prs: number; classes: number } | null>

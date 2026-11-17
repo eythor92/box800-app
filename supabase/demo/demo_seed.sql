@@ -128,3 +128,8 @@ update profiles set gender = 'karl' where email = 'idkandi@box800.demo';
 update bookings set status = 'no_show'
 where id in (select b.id from bookings b join classes c on c.id = b.class_id
              where c.starts_at::date = current_date - 1 and b.status = 'booked' order by md5(b.id::text) limit 9);
+
+-- Skilaboð frá iðkanda sem kemst ekki inn (fyrir innhólf eiganda)
+insert into support_messages (profile_id, what, phone, body, created_at)
+select id, 'Áskrift', '8671234', 'Keypti áskrift á Abler í gær en appið segir að ég sé ekki með kort.', now() - interval '2 hours'
+from profiles where role = 'member' and full_name <> 'Jón Jónsson' order by full_name offset 3 limit 1;

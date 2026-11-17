@@ -10,6 +10,7 @@ import accessSql from '../../supabase/migrations/009_adgangur.sql?raw'
 import titleSql from '../../supabase/migrations/010_nafn_tima.sql?raw'
 import noShowSql from '../../supabase/migrations/011_fjarvist.sql?raw'
 import insightSql from '../../supabase/migrations/012_innsyn.sql?raw'
+import supportSql from '../../supabase/migrations/013_skilabod.sql?raw'
 import demoSql from '../../supabase/demo/demo_seed.sql?raw'
 import type { Api, Profile, Settings, Workout } from './types'
 
@@ -39,6 +40,7 @@ export async function demoApi(): Promise<Api> {
   await db.exec(titleSql)
   await db.exec(noShowSql)
   await db.exec(insightSql)
+  await db.exec(supportSql)
   await db.exec(demoSql)
 
   let current: string | null = sessionStorageGet()
@@ -119,6 +121,10 @@ export async function demoApi(): Promise<Api> {
     insights: (f, t) => rows(`select * from insights($1, $2)`, [f, t]),
     insightsSummary: (f, t) => one(`select * from insights_summary($1, $2)`, [f, t]),
     noShowCount: (id) => one<{ n: number }>(`select no_show_count($1) n`, [id]).then((r) => Number(r?.n ?? 0)),
+    sendSupport: async (w, ph, b) => { await write(`select send_support_message($1, $2, $3)`, [w, ph, b]) },
+    supportPending: () => one<{ t: string | null }>(`select my_support_pending() t`).then((r) => r?.t ?? null),
+    supportInbox: () => rows(`select * from support_inbox()`),
+    supportHandled: async (id) => { await write(`select support_handled($1)`, [id]) },
     markNotificationRead: async (id) => { await write(`update notifications set read_at = now() where id = $1 and profile_id = me()`, [id]) },
     markNotificationsRead: async () => { await write(`update notifications set read_at = now() where profile_id = me() and read_at is null`) },
     movements: () => rows(`select * from movements where active order by sort, name`),

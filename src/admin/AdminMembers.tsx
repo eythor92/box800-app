@@ -22,6 +22,7 @@ function statusOf(m: MemberRow): Tab {
 export default function AdminMembers() {
   const { api, toast, refresh } = useApp()
   const { data, error } = useData((a) => a.members())
+  const { data: inbox } = useData((a) => a.supportInbox())
   const [tab, setTab] = useState<Tab>('active')
   const [q, setQ] = useState('')
   const nav = useNavigate()
@@ -50,6 +51,26 @@ export default function AdminMembers() {
         <div><h1>Iðkendur</h1><div className="muted" style={{ fontSize: 14 }}>Áskriftir koma frá Abler. Hér sérðu stöðu, mætingu og samskiptaupplýsingar.</div></div>
         <button className="btn btn-primary" onClick={() => setNw({ first: '', last: '', email: '', phone: '', kt: '', note: '', emergency: '', child: false })}>+ Nýr iðkandi</button>
       </div>
+      {inbox && inbox.length > 0 && (
+        <section className="a-card" style={{ marginTop: 20, borderColor: '#f2b84b' }}>
+          <h2 className="mp-h" style={{ marginTop: 0 }}>Kemst ekki inn <span className="badge badge-warn" style={{ marginLeft: 6 }}>{inbox.length}</span></h2>
+          <div className="muted" style={{ fontSize: 14, marginBottom: 6 }}>Iðkendur sem segjast hafa keypt en komast ekki inn. Opnaðu prófílinn og bættu við áskrift, merktu svo afgreitt.</div>
+          {inbox.map((m) => (
+            <div key={m.id} className="row" style={{ gap: 12, padding: '12px 0', borderTop: '1px solid var(--line)', alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              <Avatar src={m.avatar_url} name={m.full_name} size={40} />
+              <div className="grow" style={{ minWidth: 220 }}>
+                <div><b>{m.full_name}</b>{m.what && <span className="badge badge-outline" style={{ marginLeft: 8 }}>{m.what}</span>}{m.has_access && <span className="badge badge-grey" style={{ marginLeft: 8 }}>HEFUR NÚ AÐGANG</span>}</div>
+                <div className="muted" style={{ fontSize: 14 }}>{m.email}{m.phone ? ' · ' + m.phone : ''} · {relDay(m.created_at)}</div>
+                {m.body && <div style={{ marginTop: 6, whiteSpace: 'pre-wrap' }}>{m.body}</div>}
+              </div>
+              <div className="row" style={{ gap: 8 }}>
+                <button className="btn btn-outline btn-sm" onClick={() => nav('/stjorn/idkendur/' + m.profile_id)}>Opna prófíl</button>
+                <button className="btn btn-primary btn-sm" onClick={async () => { try { await api.supportHandled(m.id); toast('Merkt afgreitt'); refresh() } catch (e) { toast(errMsg(e)) } }}>Afgreitt</button>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
       <div className="row" style={{ flexWrap: 'wrap', marginTop: 20 }}>
         {tabs.map(([t, l]) => <button key={t} className={`chip${tab === t ? ' on' : ''}`} onClick={() => setTab(t)}>{l} <span style={{ opacity: .75 }}>{rows.filter((m) => inTab(m.st, t, m.role)).length}</span></button>)}
       </div>

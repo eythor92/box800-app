@@ -78,7 +78,8 @@ export default function MobileShell() {
             <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 6 }}>Tilkynningar</div>
             {(notes ?? []).length === 0 && <div className="muted" style={{ padding: '12px 0' }}>Engar tilkynningar enn.</div>}
             {(notes ?? []).map((n) => (
-              <div key={n.id} style={{ display: 'flex', gap: 12, padding: '12px 0', borderTop: '1px solid var(--line)' }}>
+              <div key={n.id} style={{ display: 'flex', gap: 12, padding: '12px 0', borderTop: '1px solid var(--line)', cursor: n.kind === 'support' ? 'pointer' : undefined }}
+                onClick={n.kind === 'support' ? () => { setBell(false); nav('/stjorn/idkendur') } : undefined}>
                 <span style={{ width: 8, height: 8, borderRadius: 9, marginTop: 7, background: n.read_at ? 'var(--line-2)' : 'var(--accent)', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontWeight: 600 }}>{n.title}</div>

@@ -24,6 +24,7 @@ try { await db.exec(fs.readFileSync(new URL('009_adgangur.sql', dir), 'utf8')); 
 try { await db.exec(fs.readFileSync(new URL('010_nafn_tima.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 010:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('011_fjarvist.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 011:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('012_innsyn.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 012:', e.message, e.position); process.exit(1); }
+try { await db.exec(fs.readFileSync(new URL('013_skilabod.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 013:', e.message, e.position); process.exit(1); }
 console.log('Uppsetning tókst');
 
 // Notendur
@@ -234,6 +235,16 @@ const ins = await q(`select * from insights('2000-01-01', current_date)`);
 ok(ins.some((r) => r.kind === 'noshow') && ins.some((r) => r.kind === 'attend'), 'Innsýn: listar yfir mætingu og fjarvistir');
 ok((await q(`select * from insights_summary(current_date - 30, current_date)`)).length === 1, 'Innsýn: heildartölur');
 await as(members[1]); ok((await q(`select * from insights('2000-01-01', current_date)`)).length === 0, 'Iðkandi sér ekki innsýn');
+// Skilaboð: iðkandi sendir, eigandi fær tilkynningu og sér í innhólfi
+await as(members[2]); await q(`select send_support_message('Áskrift', '8881234', 'Keypti í gær en kemst ekki inn')`);
+ok((await q(`select my_support_pending() as t`))[0].t !== null, 'Skilaboð: iðkandi sér að þau eru send');
+ok((await q(`select * from support_inbox()`)).length === 0, 'Skilaboð: iðkandi sér ekki innhólf');
+await as(U.eythor);
+const inbox = await q(`select * from support_inbox()`);
+ok(inbox.length === 1 && inbox[0].what === 'Áskrift', 'Skilaboð: eigandi sér skilaboðin');
+ok((await q(`select count(*)::int n from notifications where kind = 'support'`))[0].n >= 1, 'Skilaboð: eigandi fær tilkynningu');
+await q(`select support_handled($1)`, [inbox[0].id]);
+ok((await q(`select * from support_inbox()`)).length === 0, 'Skilaboð: afgreitt hverfur úr innhólfi');
 
 console.log(fails ? `\n${fails} próf féllu` : '\nÖll próf stóðust');
 process.exit(fails ? 1 : 0);

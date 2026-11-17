@@ -83,6 +83,10 @@ export function supabaseApi(url: string, key: string): Api {
     insights: (f, t) => rpc('insights', { p_from: f, p_to: t }),
     async insightsSummary(f, t) { const r = await rpc<{ visits: number; active_members: number; no_shows: number; prs: number; classes: number }[]>('insights_summary', { p_from: f, p_to: t }); return r?.[0] ?? null },
     noShowCount: (id) => rpc('no_show_count', { p_profile: id }),
+    async sendSupport(what, phone, body) { await rpc('send_support_message', { p_what: what, p_phone: phone, p_body: body }) },
+    supportPending: () => rpc('my_support_pending'),
+    supportInbox: () => rpc('support_inbox'),
+    async supportHandled(id) { await rpc('support_handled', { p_id: id }) },
     async markNotificationRead(id) { must(await sb.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id)) },
     async markNotificationsRead() {
       const me = await rpc<string>('me')
