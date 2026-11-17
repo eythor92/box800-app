@@ -10,6 +10,21 @@ export default function AdminClasses() {
   const [scope, setScope] = useState<Record<number, 'one' | 'all'>>({})
   const { data, error } = useData((a) => a.classList(dayStart(day), dayStart(addDays(day, 1))), [day])
   const { data: programs } = useData((a) => a.programs())
+  const { data: staff } = useData((a) => a.staff())
+  const [nc, setNc] = useState<null | { program_id: number; day: string; time: string; mins: number; cap: string; coach_id: string }>(null)
+  async function addClass() {
+    if (!nc) return
+    if (!/^\d{1,2}:\d{2}$/.test(nc.time)) { toast('Klukkan á að vera t.d. 12:00'); return }
+    const [h, m] = nc.time.split(':').map(Number)
+    // Ísland er alltaf á UTC
+    const start = new Date(`${nc.day}T${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:00Z`)
+    if (+start < Date.now()) { toast('Tíminn er liðinn'); return }
+    try {
+      await api.addClass({ program_id: nc.program_id, starts_at: start.toISOString(), ends_at: new Date(+start + nc.mins * 60000).toISOString(), cap: nc.cap ? Number(nc.cap) : null, coach_id: nc.coach_id || null })
+      toast(`Tíma bætt við: ${programs?.find((p) => p.id === nc.program_id)?.name} ${cap1(dayLabel(nc.day))} kl. ${nc.time}`)
+      setDay(nc.day); setNc(null); refresh()
+    } catch (e) { toast(errMsg(e)) }
+  }
   const list = useMemo(() => (data ?? []).filter((c) => dayKey(new Date(c.starts_at)) === day), [data, day])
 
   async function setCap(id: number, cap: number, sc: 'one' | 'all') {
@@ -25,10 +40,13 @@ export default function AdminClasses() {
           <h1>Tímar og fjöldi</h1>
           <div className="muted" style={{ fontSize: 14 }}>Breyttu hámarksfjölda hvenær sem er, fyrir hvern tíma. Ef plássum fjölgar fer fólk sjálfkrafa inn af biðlista.</div>
         </div>
+        <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+        <button className="btn btn-primary" onClick={() => programs?.length && setNc({ program_id: programs[0].id, day, time: '12:00', mins: 60, cap: '', coach_id: '' })}>+ Bæta við tíma</button>
         <div className="row" style={{ gap: 4, background: 'var(--card-2)', border: '1px solid var(--line)', borderRadius: 3, padding: 4 }}>
           <button className="icon-btn" aria-label="Fyrri dagur" onClick={() => setDay(addDays(day, -1))}><Icon name="back" /></button>
           <div style={{ minWidth: 210, textAlign: 'center', fontWeight: 700 }}>{cap1(dayLabel(day, true))}</div>
           <button className="icon-btn" aria-label="Næsti dagur" onClick={() => setDay(addDays(day, 1))}><Icon name="next" /></button>
+        </div>
         </div>
       </div>
       {error && <div className="error" style={{ marginTop: 16 }}>{error}</div>}
@@ -82,6 +100,34 @@ export default function AdminClasses() {
           ))}
         </div>
       </section>
+      {nc && (
+        <>
+          <button className="modal-back" aria-label="Loka" onClick={() => setNc(null)} />
+          <form className="modal" role="dialog" aria-label="Bæta við tíma" onSubmit={(e) => { e.preventDefault(); addClass() }}>
+            <div className="row" style={{ justifyContent: 'space-between' }}><h2 className="display" style={{ margin: 0, fontSize: 30 }}>Bæta við tíma</h2><button type="button" className="icon-btn" aria-label="Loka" onClick={() => setNc(null)}><Icon name="x" /></button></div>
+            <div className="muted" style={{ fontSize: 14, marginTop: 4 }}>Stakur aukatími. Hann bætist ekki við föstu tímatöfluna.</div>
+            <label className="field" style={{ marginTop: 16 }}><span>Námskeið</span>
+              <select className="select" value={nc.program_id} onChange={(e) => setNc({ ...nc, program_id: Number(e.target.value) })}>{(programs ?? []).map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}</select>
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr 1fr', gap: 12, marginTop: 12 }}>
+              <label className="field"><span>Dagur</span><input className="input" type="date" min={today()} value={nc.day} onChange={(e) => setNc({ ...nc, day: e.target.value })} /></label>
+              <label className="field"><span>Klukkan</span><input className="input" inputMode="numeric" placeholder="12:00" value={nc.time} onChange={(e) => setNc({ ...nc, time: e.target.value.replace('.', ':') })} /></label>
+              <label className="field"><span>Lengd (mín.)</span><input className="input" type="number" min={15} step={5} value={nc.mins} onChange={(e) => setNc({ ...nc, mins: Number(e.target.value) || 60 })} /></label>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.4fr', gap: 12, marginTop: 12 }}>
+              <label className="field"><span>Hámark</span><input className="input" type="number" min={1} placeholder={String(programs?.find((p) => p.id === nc.program_id)?.default_cap ?? '')} value={nc.cap} onChange={(e) => setNc({ ...nc, cap: e.target.value })} /></label>
+              <label className="field"><span>Þjálfari</span>
+                <select className="select" value={nc.coach_id} onChange={(e) => setNc({ ...nc, coach_id: e.target.value })}><option value="">Ekki ákveðið</option>{(staff ?? []).map((s) => <option key={s.id} value={s.id}>{s.full_name}</option>)}</select>
+              </label>
+            </div>
+            <div className="muted" style={{ fontSize: 13, marginTop: 10 }}>Bókanir opna samkvæmt bókunarstillingum (t.d. kl. 12:00 daginn áður).</div>
+            <div className="row" style={{ justifyContent: 'flex-end', marginTop: 20 }}>
+              <button type="button" className="btn btn-ghost" onClick={() => setNc(null)}>Hætta við</button>
+              <button className="btn btn-primary">Bæta við tíma</button>
+            </div>
+          </form>
+        </>
+      )}
     </>
   )
 }

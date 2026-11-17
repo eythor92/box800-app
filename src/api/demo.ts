@@ -134,6 +134,7 @@ export async function demoApi(): Promise<Api> {
       const url = await new Promise<string>((ok) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.readAsDataURL(jpeg) })
       await write(`update profiles set avatar_url = $2 where id = $1`, [pid, url]); return url
     },
+    addClass: async (c) => { await write(`insert into classes (program_id, starts_at, ends_at, cap, coach_id) values ($1, $2, $3, $4, $5)`, [c.program_id, c.starts_at, c.ends_at, c.cap, c.coach_id]) },
     staffAdd: (c, p, w) => val(`select staff_add($1, $2, $3)`, [c, p, w]),
     createDropin: (n, e, ph) => val(`select create_dropin($1, $2, $3)`, [n, e ?? null, ph ?? null]),
     hasAccess: () => one<{ a: boolean }>(`select has_access() a`).then((r) => !!r?.a),
