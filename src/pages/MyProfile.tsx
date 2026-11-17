@@ -11,14 +11,14 @@ export default function MyProfile() {
   const { data: ms } = useData((a) => a.membershipsOf(me.id), [me.id])
   const [f, setF] = useState<Partial<Profile>>({})
   const [busy, setBusy] = useState(false)
-  useEffect(() => { if (p) setF({ full_name: p.full_name, phone: p.phone, emergency: p.emergency, emergency_phone: p.emergency_phone }) }, [p])
+  useEffect(() => { if (p) setF({ full_name: p.full_name, phone: p.phone, gender: p.gender, emergency: p.emergency, emergency_phone: p.emergency_phone }) }, [p])
   const live = (ms ?? []).find((m) => m.status === 'active' && (!m.ends_on || m.ends_on >= today()))
 
   async function save() {
     if (!f.full_name?.trim()) { toast('Nafn vantar'); return }
     setBusy(true)
     try {
-      await api.updateProfile(me.id, { full_name: f.full_name.trim(), phone: f.phone?.trim() || null, emergency: f.emergency?.trim() || null, emergency_phone: f.emergency_phone?.trim() || null })
+      await api.updateProfile(me.id, { full_name: f.full_name.trim(), phone: f.phone?.trim() || null, gender: f.gender || null, emergency: f.emergency?.trim() || null, emergency_phone: f.emergency_phone?.trim() || null })
       toast('Vistað'); refresh(); reloadMe?.()
     } catch (e) { toast(errMsg(e)) } finally { setBusy(false) }
   }
@@ -43,6 +43,11 @@ export default function MyProfile() {
 
       {inp('full_name', 'Fullt nafn')}
       {inp('phone', 'Farsími', 'tel')}
+      <label className="field" style={{ marginTop: 12 }}><span>Kyn</span>
+        <select className="select" value={f.gender ?? ''} onChange={(e) => setF({ ...f, gender: (e.target.value || null) as Profile['gender'] })}>
+          <option value="">Vil ekki segja</option><option value="kona">Kona</option><option value="karl">Karl</option><option value="annað">Annað</option>
+        </select>
+      </label>
       <div className="label" style={{ marginTop: 20 }}>Neyðartengiliður</div>
       {inp('emergency', 'Nafn')}
       {inp('emergency_phone', 'Farsími', 'tel')}

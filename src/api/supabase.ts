@@ -80,6 +80,8 @@ export function supabaseApi(url: string, key: string): Api {
       const me = await rpc<string>('me')
       return must(await sb.from('notifications').select('*').eq('profile_id', me).order('created_at', { ascending: false }).limit(40))
     },
+    noShowCount: (id) => rpc('no_show_count', { p_profile: id }),
+    async markNotificationRead(id) { must(await sb.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id)) },
     async markNotificationsRead() {
       const me = await rpc<string>('me')
       must(await sb.from('notifications').update({ read_at: new Date().toISOString() }).eq('profile_id', me).is('read_at', null))

@@ -126,7 +126,7 @@ export default function CoachClass() {
             <div key={r.profile_id} className="list-row">
               <span style={{ width: 36, height: 36, borderRadius: 99, border: '1.5px solid var(--warn)', color: 'var(--warn)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800 }}>{r.wait_pos}</span>
               <div className="grow"><div style={{ fontWeight: 600 }}>{r.full_name}</div><div className="muted" style={{ fontSize: 13 }}>{r.wait_pos === 1 ? 'Fær næsta pláss sjálfkrafa' : 'Bíður'}</div></div>
-              <button className="btn btn-ghost btn-sm" onClick={() => go(() => api.cancelBooking(cid, r.profile_id), 'Tekin(n) af biðlista')}>Fjarlægja</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => go(() => api.cancelBooking(cid, r.profile_id), 'Fjarlægt af biðlista')}>Fjarlægja</button>
             </div>
           ))}
         </>

@@ -50,6 +50,12 @@ export function initials(name: string): string {
 }
 export function cap1(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1) }
 
+/** Orðmynd eftir kyni: kyn(me.gender, 'skráð', 'skráður') → „skráð(ur)“ ef kyn er óþekkt */
+export function kyn(g: string | null | undefined, kvk: string, kk: string, hlut?: string): string {
+  if (g === 'kona') return kvk
+  if (g === 'karl') return kk
+  return hlut ?? (kk.startsWith(kvk) ? `${kvk}(${kk.slice(kvk.length)})` : `${kvk}/${kk}`)
+}
 export function errMsg(e: unknown): string { return e instanceof Error ? e.message : String(e) }
 
 /** *Feitletrað* → { text, bold } */

@@ -118,7 +118,7 @@ export interface MemberRow {
   member_since?: string | null
 }
 
-export interface Notification { id: number; title: string; body: string | null; created_at: string; read_at: string | null }
+export interface Notification { id: number; title: string; body: string | null; created_at: string; read_at: string | null; kind?: string | null }
 export interface Attendance { class_id: number; program: string; starts_at: string; checked_in: boolean }
 
 export interface NewMember {
@@ -192,6 +192,8 @@ export interface Api {
   myAttendance(): Promise<Attendance[]>
   notifications(): Promise<Notification[]>
   markNotificationsRead(): Promise<void>
+  markNotificationRead(id: number): Promise<void>
+  noShowCount(profileId: string): Promise<number>
   subscribe(cb: () => void): () => void
   // skor og árangur
   movements(): Promise<Movement[]>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Profile, RosterRow } from '../api'
 import { useApp, useData } from '../ctx'
 import { Avatar, Icon } from '../components/Icon'
-import { addDays, cap1, dayKey, dayLabel, dayStart, errMsg, hhmm, initials, shortTime } from '../util'
+import { addDays, kyn, cap1, dayKey, dayLabel, dayStart, errMsg, hhmm, initials, shortTime } from '../util'
 import { currentClass, useNow } from './shared'
 import { PanelHead, type PanelProps } from './panel'
 
@@ -39,10 +39,10 @@ export default function Coachboard(pp: PanelProps) {
     return () => { live = false; clearTimeout(t) }
   }, [q, api])
 
-  async function signIn(id: string, name: string) {
+  async function signIn(id: string, name: string, gender?: string | null) {
     if (!sel || busy) return
     setBusy(true)
-    try { await api.kioskSignIn(sel.id, id); toast(`Velkomin(n), ${name.split(' ')[0]}!`); setQ(''); setHits(null); refresh() }
+    try { await api.kioskSignIn(sel.id, id); toast(`${kyn(gender, 'Velkomin', 'Velkominn')}, ${name.split(' ')[0]}!`); setQ(''); setHits(null); refresh() }
     catch (e) { toast(errMsg(e)) } finally { setBusy(false) }
   }
   async function act(fn: () => Promise<unknown>) {
@@ -84,10 +84,10 @@ export default function Coachboard(pp: PanelProps) {
                 {hits.map((h) => {
                   const r = (roster ?? []).find((x) => x.profile_id === h.id)
                   return (
-                    <button key={h.id} disabled={busy || !!r?.checked_in} onClick={() => signIn(h.id, h.full_name)}>
+                    <button key={h.id} disabled={busy || !!r?.checked_in} onClick={() => signIn(h.id, h.full_name, h.gender)}>
                       <Avatar src={h.avatar_url} name={h.full_name} size={34} />
                       <span className="grow ellipsis">{h.full_name}</span>
-                      <span className="cb-pill">{r?.checked_in ? 'Mætt(ur)' : 'Skrá inn'}</span>
+                      <span className="cb-pill">{r?.checked_in ? kyn(h.gender, 'Mætt', 'Mættur') : 'Skrá inn'}</span>
                     </button>
                   )
                 })}

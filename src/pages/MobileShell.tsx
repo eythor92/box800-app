@@ -15,6 +15,13 @@ export default function MobileShell() {
   const [menu, setMenu] = useState(false)
   const { data: notes } = useData((a) => a.notifications())
   const unread = (notes ?? []).filter((n) => !n.read_at).length
+  // Áminning um fjarvist birtist sem gluggi þegar appið er opnað
+  const missed = (notes ?? []).find((n) => !n.read_at && n.kind === 'no_show')
+  async function dismissMissed(go?: boolean) {
+    if (!missed) return
+    await api.markNotificationRead(missed.id).catch(() => undefined); refresh()
+    if (go) nav('/timatafla')
+  }
   const staff = me.role !== 'member'
   const coachMode = loc.pathname.startsWith('/thjalfari')
   const isClassPage = loc.pathname.startsWith('/thjalfari/timi')
@@ -103,6 +110,19 @@ export default function MobileShell() {
             <button className="link" onClick={() => api.signOut()}>Skrá út</button>
             <div className="muted" style={{ marginTop: 'auto', fontSize: 13 }}>BOX800 · Eyravegur 57 · Selfossi{api.demo ? ' · prófunarútgáfa' : ''}</div>
           </nav>
+        </>
+      )}
+      {missed && !bell && (
+        <>
+          <button className="sheet-back" aria-label="Loka" onClick={() => dismissMissed()} />
+          <div className="sheet" role="dialog" aria-label="Áminning">
+            <div className="grip" />
+            <div style={{ fontSize: 40, lineHeight: 1 }} aria-hidden>👋</div>
+            <div className="display" style={{ fontSize: 28, marginTop: 10 }}>{missed.title}</div>
+            <p style={{ color: 'var(--text-2)', fontSize: 16, lineHeight: 1.5 }}>{missed.body}</p>
+            <button className="btn btn-primary btn-block" style={{ height: 52 }} onClick={() => dismissMissed(true)}>Bóka næsta tíma</button>
+            <button className="btn btn-block" style={{ marginTop: 8 }} onClick={() => dismissMissed()}>Ok, skil</button>
+          </div>
         </>
       )}
     </div>

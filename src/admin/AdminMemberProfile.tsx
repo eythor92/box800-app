@@ -41,6 +41,7 @@ export default function AdminMemberProfile() {
   const { data: ms } = useData((a) => a.membershipsOf(id), [id])
   const { data: att } = useData((a) => a.attendanceOf(id), [id])
   const { data: lifts } = useData((a) => a.liftsOf(id), [id])
+  const { data: noShows } = useData((a) => a.noShowCount(id), [id])
   const [tab, setTab] = useState<Tab>('info')
   const [f, setF] = useState<Partial<Profile> | null>(null)
   const [menu, setMenu] = useState(false)
@@ -120,6 +121,7 @@ export default function AdminMemberProfile() {
           <div><span className="label">Netfang</span>{p.email ? <a href={`mailto:${p.email}`}>{p.email}</a> : '–'}</div>
           <div><span className="label">Tímar samtals</span>{att ? visits : '…'}</div>
           <div><span className="label">Síðast mætt</span>{last ? relDay(last) : '–'}</div>
+          <div><span className="label">Mætti ekki</span><span style={{ color: noShows ? 'var(--warn)' : undefined }}>{noShows ?? '…'} {noShows === 1 ? 'sinni' : 'sinnum'}</span></div>
           <div><span className="label">Innskráning</span>{p.is_dependent ? 'Barn / aðstandandi' : (p as Profile & { auth_id?: string }).auth_id ? 'Hefur aðgang' : 'Ekki stofnað aðgang enn'}</div>
         </div>
         {p.note && <div className="stat" style={{ gridColumn: '1 / -1' }}><span className="label">Athugasemd fyrir þjálfara</span><div>{p.note}</div></div>}

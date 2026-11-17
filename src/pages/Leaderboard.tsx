@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import type { Result, WorkoutComponent } from '../api'
-import { useData } from '../ctx'
+import { useApp, useData } from '../ctx'
 import { Avatar, Icon } from '../components/Icon'
 import ScoreSheet from '../components/ScoreSheet'
-import { cap1, dayLabel, parseLines } from '../util'
+import { cap1, dayLabel, kyn, parseLines } from '../util'
 import { compKey, compTitle, fmtResult, kindOf, rankCmp } from '../score'
 
 /** Stigatafla fyrir æfingu dagsins, eins og „Leaderboard“ í Wodify */
@@ -13,6 +13,7 @@ export default function Leaderboard() {
   const [params] = useSearchParams()
   const day = params.get('d') ?? ''
   const nav = useNavigate()
+  const { me } = useApp()
   const { data: ws } = useData((a) => a.workouts(day, day), [day])
   const { data: programs } = useData((a) => a.programs())
   const w = ws?.find((x) => x.id === wid)
@@ -61,7 +62,7 @@ export default function Leaderboard() {
             {w?.id && <button className="btn btn-outline btn-sm" style={{ marginTop: 12 }} onClick={() => setLog({ c: cur.c, i: cur.i, r: mine })}>{mine ? 'Breyta mínu skori' : '+ Skrá mitt skor'}</button>}
           </div>
           {!rows && <div className="spinner" />}
-          {rows && sorted.length === 0 && <div className="empty" style={{ margin: 16 }}>Engin skor skráð enn. Vertu fyrst(ur)!</div>}
+          {rows && sorted.length === 0 && <div className="empty" style={{ margin: 16 }}>Engin skor skráð enn. Vertu {kyn(me.gender, 'fyrst', 'fyrstur')}!</div>}
           {sorted.map((r, i) => (
             <div key={r.profile_id} className={`lb-row${r.is_me ? ' me' : ''}`}>
               <span className="rk">{ranks[i]}</span>

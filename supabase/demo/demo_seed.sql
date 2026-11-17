@@ -116,3 +116,10 @@ where p.name = 'Hreysti' and w.day = current_date;
 -- Nýr iðkandi sem hefur stofnað aðgang en er ekki kominn með áskrift (sér aðeins forsíðu)
 insert into auth.users (id, email) values ('00000000-0000-0000-0000-000000000004', 'nyr@box800.demo');
 update profiles set full_name = 'Nýr Iðkandi' where email = 'nyr@box800.demo';
+
+-- Áminning um fjarvist fyrir Jón (prufa á glugganum)
+insert into notifications (profile_id, title, body, kind)
+select id, 'Við söknuðum þín í Hreysti 17:35 (' || to_char(current_date - 1, 'DD.MM.') || ')',
+       'Þú varst skráður en komst ekki. Ekkert mál! En mundu að afbóka ef þú kemst ekki, svo einhver af biðlistanum fái plássið.', 'no_show'
+from profiles where email = 'idkandi@box800.demo';
+update profiles set gender = 'karl' where email = 'idkandi@box800.demo';

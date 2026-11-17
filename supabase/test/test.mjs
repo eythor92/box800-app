@@ -22,6 +22,7 @@ try { await db.exec(fs.readFileSync(new URL('007_profile.sql', dir), 'utf8')); }
 try { await db.exec(fs.readFileSync(new URL('008_mynd_dropin.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 008:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('009_adgangur.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 009:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('010_nafn_tima.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 010:', e.message, e.position); process.exit(1); }
+try { await db.exec(fs.readFileSync(new URL('011_fjarvist.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 011:', e.message, e.position); process.exit(1); }
 console.log('Uppsetning tókst');
 
 // Notendur
@@ -194,6 +195,20 @@ await as(U.eythor);
 await q(`update classes set title = 'Hreysti: Jólaæfing' where id = $1`, [wl.id]);
 await as(members[1]);
 ok((await q(`select program from class_list(now(), now() + interval '2 days') where id = $1`, [wl.id]))[0]?.program === 'Hreysti: Jólaæfing', 'Tími með eigin nafni birtist undir því nafni');
+
+// Fjarvist
+await as(U.eythor);
+const [ns] = await q(`insert into classes (program_id, starts_at, ends_at) select id, now() - interval '3 hours', now() - interval '2 hours' from programs where name = 'Hreysti' returning id`);
+const [ns2] = await q(`insert into classes (program_id, starts_at, ends_at) select id, now() - interval '4 hours', now() - interval '3 hours' from programs where name = 'Hreysti' returning id`);
+for (const i of [0, 1, 2]) await q(`insert into bookings (class_id, profile_id, status) values ($1, $2, 'booked')`, [ns.id, await pid(members[i])]);
+await q(`insert into bookings (class_id, profile_id, status) values ($1, $2, 'booked')`, [ns2.id, await pid(members[0])]);
+await q(`update bookings set checked_in_at = now() where class_id = $1 and profile_id = $2`, [ns.id, await pid(members[0])]);
+ok(Number((await q(`select mark_no_shows() n`))[0].n) === 2, 'Tveir sem mættu ekki merktir fjarverandi');
+ok((await q(`select status from bookings where class_id = $1 and profile_id = $2`, [ns2.id, await pid(members[0])]))[0].status === 'booked', 'Engin mæting skráð í tímanum → enginn merktur fjarverandi');
+ok((await q(`select count(*)::int n from notifications where class_id = $1 and kind = 'no_show'`, [ns.id]))[0].n === 2, 'Þeir fá áminningu');
+ok(Number((await q(`select mark_no_shows() n`))[0].n) === 0, 'Ekki tvítekið');
+await as(U.alda); await q(`select check_in($1, $2, true)`, [ns.id, await pid(members[1])]);
+ok((await q(`select status from bookings where class_id = $1 and profile_id = $2`, [ns.id, await pid(members[1])]))[0].status === 'booked', 'Þjálfari leiðréttir fjarvist');
 
 // Skor
 const [bs] = await q(`select id from movements where name = 'Back Squat'`);

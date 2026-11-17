@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import type { ClassRow } from '../api'
 import { useApp, useData } from '../ctx'
 import { Avatar, Icon } from './Icon'
-import { bookingOpensAt, cap1, dayKey, dayLabel, errMsg, hhmm, shortTime, whenText } from '../util'
+import { bookingOpensAt, kyn, cap1, dayKey, dayLabel, errMsg, hhmm, shortTime, whenText } from '../util'
 
 export function classState(c: ClassRow) {
   const past = new Date(c.starts_at) <= new Date()
@@ -20,7 +20,7 @@ export function classState(c: ClassRow) {
 }
 
 export default function ClassSheet({ c, onClose }: { c: ClassRow; onClose: () => void }) {
-  const { api, toast, refresh } = useApp()
+  const { api, me, toast, refresh } = useApp()
   const nav = useNavigate()
   const [busy, setBusy] = useState(false)
   const st = classState(c)
@@ -43,7 +43,7 @@ export default function ClassSheet({ c, onClose }: { c: ClassRow; onClose: () =>
     try {
       if (st.booked || st.waiting) {
         await api.cancelBooking(c.id)
-        toast(st.waiting ? 'Þú ert farin(n) af biðlista' : 'Bókun afturkölluð')
+        toast(st.waiting ? `Þú ert ${kyn(me.gender, 'farin', 'farinn')} af biðlista` : 'Bókun afturkölluð')
       } else {
         const r = await api.book(c.id)
         toast(r === 'waitlist' ? 'Þú ert á biðlista – við látum þig vita' : `Bókað! ${c.program} kl. ${hhmm(c.starts_at)}`)
@@ -61,7 +61,7 @@ export default function ClassSheet({ c, onClose }: { c: ClassRow; onClose: () =>
 
   async function signIn() {
     setBusy(true)
-    try { await api.selfCheckIn(c.id); toast('Þú ert skráð(ur) inn. Góða æfingu!'); refresh() } catch (e) { toast(errMsg(e)) } finally { setBusy(false) }
+    try { await api.selfCheckIn(c.id); toast(`Þú ert ${kyn(me.gender, 'skráð', 'skráður')} inn. Góða æfingu!`); refresh() } catch (e) { toast(errMsg(e)) } finally { setBusy(false) }
   }
 
   return (
@@ -82,7 +82,7 @@ export default function ClassSheet({ c, onClose }: { c: ClassRow; onClose: () =>
           <span>Skráðir</span><Icon name="people" size={20} /><b>{people?.length ?? c.booked} | {c.cap}</b>{c.waiting > 0 && <span className="muted" style={{ fontWeight: 500 }}>· {c.waiting} á biðlista</span>}
         </div>
         {!people && <div className="spinner" style={{ margin: '16px auto' }} />}
-        {people?.length === 0 && <div className="muted" style={{ padding: '6px 0 4px' }}>Enginn skráður enn. Vertu fyrst(ur)!</div>}
+        {people?.length === 0 && <div className="muted" style={{ padding: '6px 0 4px' }}>Enginn skráður enn. Vertu {kyn(me.gender, 'fyrst', 'fyrstur')}!</div>}
         <div className="cs-list">
           {people?.map((p) => (
             <div key={p.profile_id} className="row" style={{ gap: 14, padding: '7px 0' }}>
@@ -95,7 +95,7 @@ export default function ClassSheet({ c, onClose }: { c: ClassRow; onClose: () =>
 
         <div className="cs-foot">
           {note && <div className={noteCls || 'stat'} style={{ marginBottom: 10, fontSize: 14, fontWeight: 600 }}>{note}</div>}
-          {meIn?.checked_in && !st.past && <div className="stat" style={{ marginBottom: 10, fontWeight: 700, color: 'var(--ok)' }}>Þú ert skráð(ur) inn. Góða æfingu!</div>}
+          {meIn?.checked_in && !st.past && <div className="stat" style={{ marginBottom: 10, fontWeight: 700, color: 'var(--ok)' }}>Þú ert {kyn(me.gender, 'skráð', 'skráður')} inn. Góða æfingu!</div>}
           <button className={`btn ${st.booked || st.waiting ? 'btn-outline' : kind} btn-block`} style={{ height: 52 }} disabled={disabled || busy} onClick={act}>{busy ? 'Augnablik…' : btn}</button>
           {canSignIn && <button className="btn btn-primary btn-block" style={{ height: 52, marginTop: 10 }} disabled={busy} onClick={signIn}>Skrá mig inn</button>}
         </div>
