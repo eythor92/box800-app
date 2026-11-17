@@ -3,6 +3,9 @@ import type { PromoAdmin, PromoInput } from '../api'
 import { useApp, useData } from '../ctx'
 import PromoCard from '../components/PromoCard'
 import { dayLabel, errMsg, today } from '../util'
+import { PLAN_GROUPS } from '../plans'
+
+const splitPlans = (s: string | null) => (s ?? '').split('|').map((x) => x.trim()).filter(Boolean)
 
 /** Minnkar merki í mest 600 px breidd og vistar sem PNG (heldur gegnsæi) */
 async function shrinkLogo(file: File, max = 600): Promise<Blob> {
@@ -16,7 +19,7 @@ async function shrinkLogo(file: File, max = 600): Promise<Blob> {
   } finally { URL.revokeObjectURL(url) }
 }
 
-const EMPTY = (): PromoInput => ({ partner: '', title: '', body: '', code: '', url: '', logo_url: null, audience_plan: 'Mömmuhreysti', starts_on: today(), ends_on: null, active: true })
+const EMPTY = (): PromoInput => ({ partner: '', title: '', body: '', code: '', url: '', logo_url: null, audience_plan: '', starts_on: today(), ends_on: null, active: true })
 
 function stateOf(p: PromoAdmin): [string, string] {
   const t = today()
@@ -58,7 +61,7 @@ export default function AdminPromos() {
   async function save() {
     if (!ed) return
     if (!ed.partner.trim() || !ed.title.trim()) { toast('Samstarfsaðili og fyrirsögn þurfa að vera útfyllt'); return }
-    if (aud === 'plan' && !ed.audience_plan?.trim()) { toast('Skrifaðu nafn áskriftarinnar'); return }
+    if (aud === 'plan' && !splitPlans(ed.audience_plan).length) { toast('Veldu a.m.k. eina áskrift eða námskeið'); return }
     const clean = (s: string | null) => (s && s.trim() ? s.trim() : null)
     try {
       await api.savePromo({ ...ed, partner: ed.partner.trim(), title: ed.title.trim(), body: clean(ed.body), code: clean(ed.code)?.toUpperCase() ?? null, url: clean(ed.url),
@@ -89,7 +92,7 @@ export default function AdminPromos() {
               <div>
                 <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}><span className={`badge ${cls}`}>{st}</span><b>{p.partner}</b></div>
                 <div className="muted" style={{ fontSize: 14, marginTop: 8, lineHeight: 1.6 }}>
-                  <div>Hverjir sjá: <b style={{ color: 'var(--text)' }}>{p.audience_plan ? `Áskrift sem heitir „${p.audience_plan}“` : 'Allir iðkendur með aðgang'}</b></div>
+                  <div>Hverjir sjá: <b style={{ color: 'var(--text)' }}>{p.audience_plan ? splitPlans(p.audience_plan).join(', ') : 'Allir iðkendur með aðgang'}</b></div>
                   <div>Tímabil: <b style={{ color: 'var(--text)' }}>{dayLabel(p.starts_on)} – {p.ends_on ? dayLabel(p.ends_on) : 'þar til slökkt er á henni'}</b></div>
                   <div>Afrituðu kóðann: <b style={{ color: 'var(--text)' }}>{p.copies}</b> · Smelltu á hlekkinn: <b style={{ color: 'var(--text)' }}>{p.clicks}</b></div>
                 </div>
@@ -130,8 +133,34 @@ export default function AdminPromos() {
                   <label className="field grow"><span>Hlekkur á vefverslun</span><input className="input" value={ed.url ?? ''} onChange={(e) => setEd({ ...ed, url: e.target.value })} placeholder="T.d. yrja.is" /></label>
                 </div>
                 <div className="field"><span>Hverjir sjá kynninguna?</span>
-                  <label className="row" style={{ gap: 8, cursor: 'pointer' }}><input type="radio" name="aud" checked={aud === 'plan'} onChange={() => setAud('plan')} />Aðeins þau sem eru með áskrift sem heitir</label>
-                  {aud === 'plan' && <input className="input" style={{ marginTop: 6 }} value={ed.audience_plan ?? ''} onChange={(e) => setEd({ ...ed, audience_plan: e.target.value })} placeholder="T.d. Mömmuhreysti" />}
+                  <label className="row" style={{ gap: 8, cursor: 'pointer' }}><input type="radio" name="aud" checked={aud === 'plan'} onChange={() => setAud('plan')} />Aðeins þau sem eru með þessar áskriftir / námskeið</label>
+                  {aud === 'plan' && (() => {
+                    const sel = splitPlans(ed.audience_plan)
+                    const setSel = (v: string[]) => setEd({ ...ed, audience_plan: v.join('|') })
+                    const known = PLAN_GROUPS.flatMap((g) => g.plans.map((x) => x.name))
+                    const extra = sel.filter((x) => !known.includes(x))
+                    const groups = extra.length ? [...PLAN_GROUPS, { label: 'Eldra val', plans: extra.map((name) => ({ name })) }] : PLAN_GROUPS
+                    return (
+                      <div className="promo-plans">
+                        {groups.map((g) => {
+                          const names = g.plans.map((x) => x.name), all = names.every((n) => sel.includes(n))
+                          return (
+                            <div key={g.label}>
+                              <div className="row" style={{ justifyContent: 'space-between' }}>
+                                <b style={{ fontSize: 12, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--muted)' }}>{g.label}</b>
+                                <button type="button" className="link" style={{ fontSize: 12 }} onClick={() => setSel(all ? sel.filter((n) => !names.includes(n)) : [...new Set([...sel, ...names])])}>{all ? 'Ekkert' : 'Velja öll'}</button>
+                              </div>
+                              {names.map((n) => (
+                                <label key={n} className="row" style={{ gap: 8, cursor: 'pointer', padding: '3px 0', fontSize: 14 }}>
+                                  <input type="checkbox" checked={sel.includes(n)} onChange={(e) => setSel(e.target.checked ? [...sel, n] : sel.filter((x) => x !== n))} />{n}
+                                </label>
+                              ))}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )
+                  })()}
                   <label className="row" style={{ gap: 8, cursor: 'pointer', marginTop: 8 }}><input type="radio" name="aud" checked={aud === 'all'} onChange={() => setAud('all')} />Allir iðkendur með aðgang</label>
                   <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>{reach === null ? '…' : `Sést núna hjá ${reach} ${reach % 10 === 1 && reach % 100 !== 11 ? 'iðkanda' : 'iðkendum'}.`}</div>
                 </div>

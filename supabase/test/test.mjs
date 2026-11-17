@@ -27,6 +27,7 @@ try { await db.exec(fs.readFileSync(new URL('012_innsyn.sql', dir), 'utf8')); } 
 try { await db.exec(fs.readFileSync(new URL('013_skilabod.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 013:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('014_samstarf.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 014:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('015_bidlisti.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 015:', e.message, e.position); process.exit(1); }
+try { await db.exec(fs.readFileSync(new URL('016_samstarf_fleiri.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 016:', e.message, e.position); process.exit(1); }
 console.log('Uppsetning tókst');
 
 // Notendur
@@ -264,6 +265,8 @@ ok(pr.length === 1 && pr[0].code === 'BOX800', 'Samstarf: sést með Mömmuhreys
 await q(`select promo_event($1, 'copy')`, [pr[0].id]);
 await as(U.eythor);
 ok((await q(`select copies from promos`))[0].copies === 1, 'Samstarf: afritun talin');
+ok((await q(`select plan_matches('Mömmuhreysti 4 vikur', 'Konuhreysti 1 mánuður|Mömmuhreysti 4 vikur') x`))[0].x === true, 'Samstarf: fleiri en ein áskrift');
+ok((await q(`select plan_matches('3 mánuðir', 'Konuhreysti 1 mánuður|Mömmuhreysti 4 vikur') x`))[0].x === false, 'Samstarf: önnur áskrift sér ekki');
 
 console.log(fails ? `\n${fails} próf féllu` : '\nÖll próf stóðust');
 process.exit(fails ? 1 : 0);

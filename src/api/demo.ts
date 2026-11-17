@@ -13,6 +13,7 @@ import insightSql from '../../supabase/migrations/012_innsyn.sql?raw'
 import supportSql from '../../supabase/migrations/013_skilabod.sql?raw'
 import promoSql from '../../supabase/migrations/014_samstarf.sql?raw'
 import waitSql from '../../supabase/migrations/015_bidlisti.sql?raw'
+import promo2Sql from '../../supabase/migrations/016_samstarf_fleiri.sql?raw'
 import demoSql from '../../supabase/demo/demo_seed.sql?raw'
 import type { Api, Profile, Settings, Workout } from './types'
 
@@ -45,6 +46,7 @@ export async function demoApi(): Promise<Api> {
   await db.exec(supportSql)
   await db.exec(promoSql)
   await db.exec(waitSql)
+  await db.exec(promo2Sql)
   await db.exec(demoSql)
 
   let current: string | null = sessionStorageGet()
