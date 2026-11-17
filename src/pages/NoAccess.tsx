@@ -62,9 +62,6 @@ export default function NoAccess() {
               <div><span className="muted">Nafn: </span><b>{me.full_name}</b></div>
               <div><span className="muted">Netfang: </span><b>{me.email}</b></div>
             </div>
-            <label className="field" style={{ marginTop: 14 }}><span>Sími</span>
-              <input className="input" type="tel" inputMode="tel" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Svo við getum hringt ef þarf" />
-            </label>
             <div className="field" style={{ marginTop: 14 }}><span>Hvað keyptirðu?</span>
               <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
                 {['Áskrift', '10 skipta kort', 'Prufukort', 'Annað'].map((w) => (
