@@ -9,6 +9,7 @@ import { Icon } from '../components/Icon'
 import ClassSheet from '../components/ClassSheet'
 import { ClassRowView, DayBar } from './Schedule'
 import { addDays, cap1, dayKey, dayLabel, dayStart, mondayOf, parseLines, today } from '../util'
+import { useSwipeDays } from '../swipe'
 
 export interface ScoreCtx {
   results: Result[]
@@ -51,6 +52,7 @@ export function WorkoutRender({ w, ctx }: { w: Workout; ctx?: ScoreCtx }) {
 export default function WorkoutView({ coach = false }: { coach?: boolean }) {
   const [params] = useSearchParams()
   const [day, setDay] = useState(params.get('d') ?? today())
+  useSwipeDays(() => setDay((d) => addDays(d, 1)), () => setDay((d) => addDays(d, -1)))
   const [prog, setProg] = useState<number | null>(params.get('p') ? Number(params.get('p')) : null)
   const [open, setOpen] = useState<number | null>(null)
   const week = mondayOf(day)

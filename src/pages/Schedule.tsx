@@ -4,6 +4,7 @@ import { useData } from '../ctx'
 import { Avatar, Icon } from '../components/Icon'
 import ClassSheet, { classState } from '../components/ClassSheet'
 import { addDays, dayKey, dayStart, DAYS_SHORT, hhmm, minutesBetween, mondayOf, parseDay, shortTime, today } from '../util'
+import { useSwipeDays } from '../swipe'
 
 export function ClassRowView({ c, onOpen }: { c: ClassRow; onOpen: () => void }) {
   const st = classState(c)
@@ -39,6 +40,7 @@ export function DayBar({ week, day, setDay }: { week: string; day: string; setDa
 
 export default function Schedule() {
   const [day, setDay] = useState(today())
+  useSwipeDays(() => setDay((d) => addDays(d, 1)), () => setDay((d) => addDays(d, -1)))
   const [prog, setProg] = useState<number | null>(null)
   const [open, setOpen] = useState<number | null>(null)
   const week = mondayOf(day)

@@ -4,11 +4,13 @@ import { useApp, useData } from '../ctx'
 import { Avatar } from '../components/Icon'
 import { DayBar } from './Schedule'
 import { addDays, dayKey, dayStart, hhmm, minutesBetween, mondayOf, shortTime, today } from '../util'
+import { useSwipeDays } from '../swipe'
 
 export default function CoachClasses() {
   const { me } = useApp()
   const nav = useNavigate()
   const [day, setDay] = useState(today())
+  useSwipeDays(() => setDay((d) => addDays(d, 1)), () => setDay((d) => addDays(d, -1)))
   const [mine, setMine] = useState(false)
   const week = mondayOf(day)
   const { data, error } = useData((a) => a.classList(dayStart(week), dayStart(addDays(week, 7))), [week])
