@@ -166,8 +166,13 @@ a { color: var(--accent); }
 .panel { position: fixed; z-index: 61; top: 0; right: 0; bottom: 0; width: min(460px, 100%); background: var(--card); border-left: 1px solid #30353b; padding: 22px; overflow-y: auto; }
 
 @media (max-width: 700px) {
-  .a-side { max-width: none; flex-basis: 100%; flex-direction: row; flex-wrap: wrap; padding: 12px; }
-  .a-side .sub { padding-left: 16px; }
+  .a-shell { display: block; }
+  .a-top { display: flex; }
+  .a-side { position: fixed; z-index: 70; top: 0; bottom: 0; left: 0; width: min(320px, 86vw); max-width: none; height: 100dvh; overflow-y: auto; overscroll-behavior: contain;
+    padding: calc(16px + env(safe-area-inset-top)) 14px calc(16px + env(safe-area-inset-bottom)); transform: translateX(-102%); transition: transform .22s ease; border-right: 1px solid var(--line-2); }
+  .a-side.open { transform: none; }
+  .a-side .a-logo { display: none !important; }
+  .a-main { padding-top: 20px; }
   .a-main h1 { font-size: 32px; }
 }
 
@@ -468,3 +473,9 @@ a.btn { text-decoration: none; }
 .promo-code em { font-style: normal; display: inline-flex; gap: 6px; align-items: center; font-size: 13px; font-weight: 700; color: #f2b84b; text-transform: uppercase; letter-spacing: .08em; }
 .promo-admin { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 20px; align-items: start; }
 @media (max-width: 760px) { .promo-admin { grid-template-columns: 1fr; } }
+
+/* Stjórnborð í síma: toppstika og valmynd sem rennur inn */
+.a-top { display: none; position: sticky; top: 0; z-index: 60; align-items: center; gap: 12px; padding: calc(10px + env(safe-area-inset-top)) 12px 10px 16px; background: rgba(9, 11, 13, .94); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+.a-scrim { position: fixed; inset: 0; z-index: 65; background: rgba(0, 0, 0, .55); border: 0; }
+body.a-locked { overflow: hidden; }
+@media (max-width: 700px) { .a-top { display: flex; } }

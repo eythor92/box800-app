@@ -38,7 +38,6 @@ export default function Home() {
     while (weeks.has(w)) { n++; w = addDays(w, -7) }
     return n
   }, [att, t])
-  const thisWeek = (att ?? []).some((a) => mondayOf(dayKey(new Date(a.starts_at))) === week)
 
   // Tölur
   const total = att?.length ?? 0
@@ -63,7 +62,6 @@ export default function Home() {
         <div className="h-flame"><Icon name="flame" size={34} color={streak ? '#f2b84b' : 'var(--muted)'} /><b>{streak}</b></div>
         <div className="grow">
           <div className="h-sh">{streak} {streak % 10 === 1 && streak % 100 !== 11 ? 'vika' : 'vikur'} í röð</div>
-          {(thisWeek || streak > 0) && <div className="muted" style={{ fontSize: 13 }}>{thisWeek ? 'Vikan er komin á blað. Vel gert!' : 'Mættu í vikunni til að halda þessu gangandi.'}</div>}
           <div className="h-week">
             {DAYS_SHORT.map((d, i) => {
               const k = addDays(week, i), done = attendedDays.has(k), booked = bookedDays.has(k) && k >= t

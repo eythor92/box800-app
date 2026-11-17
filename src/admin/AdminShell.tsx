@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useApp } from '../ctx'
 import { Avatar, Icon } from '../components/Icon'
 
@@ -14,10 +14,25 @@ const GROUPS: { id: string; label: string; icon: string; kids: [string, string][
 export default function AdminShell() {
   const { me, api } = useApp()
   const [open, setOpen] = useState<Record<string, boolean>>({ aefingar: true, timar: true, idkendur: true, innsyn: true, kiosk: true })
+  const [menu, setMenu] = useState(false)
+  const loc = useLocation()
+  useEffect(() => { setMenu(false); window.scrollTo(0, 0) }, [loc.pathname])
+  useEffect(() => {
+    document.body.classList.toggle('a-locked', menu)
+    return () => document.body.classList.remove('a-locked')
+  }, [menu])
+  const here = GROUPS.flatMap((g) => g.kids).find(([to]) => loc.pathname.startsWith(to))?.[1] ?? 'Stjórnborð'
   return (
     <div className="a-shell">
-      <aside className="a-side">
-        <Link to="/" style={{ margin: '0 10px 20px', display: 'block' }}><img src="myndir/logo-white.png" alt="BOX800 – aftur í appið" style={{ height: 44 }} /></Link>
+      {/* Í síma: toppstika með valmynd */}
+      <header className="a-top">
+        <Link to="/" aria-label="Aftur í appið"><img src="myndir/logo-white.png" alt="BOX800" style={{ height: 30, display: 'block' }} /></Link>
+        <span className="grow ellipsis" style={{ fontWeight: 800, fontSize: 13, letterSpacing: '.08em', textTransform: 'uppercase', textAlign: 'center' }}>{here}</span>
+        <button className="icon-btn" aria-label={menu ? 'Loka valmynd' : 'Opna valmynd'} aria-expanded={menu} onClick={() => setMenu(!menu)}><Icon name={menu ? 'x' : 'menu'} size={24} /></button>
+      </header>
+      {menu && <button className="a-scrim" aria-label="Loka valmynd" onClick={() => setMenu(false)} />}
+      <aside className={`a-side${menu ? ' open' : ''}`}>
+        <Link to="/" className="a-logo" style={{ margin: '0 10px 20px', display: 'block' }}><img src="myndir/logo-white.png" alt="BOX800 – aftur í appið" style={{ height: 44 }} /></Link>
         <nav aria-label="Stjórnborð" style={{ display: 'flex', flexDirection: 'column', gap: 2, width: '100%' }}>
           {GROUPS.map((g) => (
             <div key={g.id}>
