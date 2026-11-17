@@ -10,7 +10,9 @@ export default function Login({ api }: { api: Api }) {
   const [pw, setPw] = useState('')
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
-  const [err, setErr] = useState('')
+  const [err, setErr] = useState(() => {
+    try { const n = sessionStorage.getItem('box800-auth-notice'); sessionStorage.removeItem('box800-auth-notice'); return n ?? '' } catch { return '' }
+  })
   const [info, setInfo] = useState('')
 
   async function submit(e: React.FormEvent) {

@@ -165,6 +165,7 @@ export interface Api {
   signIn(email: string, password: string): Promise<void>
   signUp(email: string, password: string, fullName: string): Promise<'confirm' | 'ok'>
   resetPassword(email: string): Promise<void>
+  updatePassword(password: string): Promise<void>
   signOut(): Promise<void>
   demoUsers?(): { label: string; email: string }[]
   // gögn

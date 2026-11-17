@@ -2,7 +2,32 @@ import { createClient } from '@supabase/supabase-js'
 import type { Api, Profile } from './types'
 
 export function supabaseApi(url: string, key: string): Api {
-  const sb = createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true } })
+  // Hlekkir úr tölvupósti (staðfesting, nýtt lykilorð) koma með #access_token=… í slóðinni.
+  // Appið notar #/slóðir, svo við lesum táknin sjálf, tökum þau úr slóðinni og opnum rétta síðu.
+  const sb = createClient(url, key, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false } })
+  const ready = (async () => {
+    const h = location.hash
+    const at = ['access_token=', 'error='].map((k) => h.indexOf(k)).filter((x) => x >= 0)
+    if (!at.length) return
+    const i = Math.min(...at)
+    const q = new URLSearchParams(h.slice(i))
+    const recovery = q.get('type') === 'recovery' || h.includes('nytt-lykilord')
+    history.replaceState(null, '', location.pathname + location.search + '#/')
+    try {
+      if (q.get('access_token') && q.get('refresh_token')) {
+        const { error } = await sb.auth.setSession({ access_token: q.get('access_token')!, refresh_token: q.get('refresh_token')! })
+        if (error) throw error
+        if (recovery) sessionStorage.setItem('box800-recovery', '1')
+      } else {
+        const code = q.get('error_code') ?? ''
+        sessionStorage.setItem('box800-auth-notice', /expired|invalid/i.test(code + (q.get('error_description') ?? ''))
+          ? 'Hlekkurinn er útrunninn eða hefur þegar verið notaður. Biddu um nýjan.'
+          : (q.get('error_description') ?? 'Hlekkurinn virkaði ekki.').replace(/\+/g, ' '))
+      }
+    } catch {
+      sessionStorage.setItem('box800-auth-notice', 'Hlekkurinn er útrunninn eða hefur þegar verið notaður. Biddu um nýjan.')
+    }
+  })()
 
   const must = <T>(r: { data: T; error: { message: string } | null }): NonNullable<T> => {
     if (r.error) throw new Error(r.error.message)
@@ -13,7 +38,11 @@ export function supabaseApi(url: string, key: string): Api {
 
   return {
     demo: false,
-    async session() { return (await sb.auth.getSession()).data.session?.user.id ?? null },
+    async session() { await ready; return (await sb.auth.getSession()).data.session?.user.id ?? null },
+    async updatePassword(pw) {
+      const { error } = await sb.auth.updateUser({ password: pw })
+      if (error) throw new Error(/different from the old/i.test(error.message) ? 'Nýja lykilorðið má ekki vera það sama og það gamla' : /at least/i.test(error.message) ? 'Lykilorðið þarf að vera a.m.k. 8 stafir' : error.message)
+    },
     onAuthChange(cb) {
       const { data } = sb.auth.onAuthStateChange(() => cb())
       return () => data.subscription.unsubscribe()
@@ -30,7 +59,7 @@ export function supabaseApi(url: string, key: string): Api {
       return data.session ? 'ok' : 'confirm'
     },
     async resetPassword(email) {
-      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname + '#/nytt-lykilord' })
+      const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname })
       if (error) throw new Error(error.message)
     },
     async signOut() { await sb.auth.signOut() },

@@ -85,6 +85,7 @@ export async function demoApi(): Promise<Api> {
     },
     async signUp() { throw new Error('Nýskráning virkar þegar Supabase er tengt') },
     async resetPassword() { throw new Error('Virkar þegar Supabase er tengt') },
+    async updatePassword() { /* prófunarútgáfa */ },
     async signOut() { current = null; sessionStorageSet(null); authListeners.forEach((f) => f()) },
 
     myProfile: () => one<Profile>(`select * from profiles where auth_id = auth.uid()`),

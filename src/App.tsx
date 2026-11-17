@@ -3,6 +3,7 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { getApi, type Api, type Profile } from './api'
 import { AppCtx, useToast } from './ctx'
 import Login from './pages/Login'
+import NewPassword from './pages/NewPassword'
 import MobileShell from './pages/MobileShell'
 import Home from './pages/Home'
 import Schedule from './pages/Schedule'
@@ -38,10 +39,12 @@ export default function App() {
   const [tick, setTick] = useState(0)
   const [fatal, setFatal] = useState<string | null>(null)
   const { msg, toast } = useToast()
+  const [recovery, setRecovery] = useState(false)
 
   const loadMe = useCallback(async (a: Api) => {
     const s = await a.session()
     const p = s ? await a.myProfile() : null
+    try { if (s && sessionStorage.getItem('box800-recovery')) setRecovery(true) } catch { /* */ }
     if (p) setAccess(await a.hasAccess().catch(() => true))
     setMe(p)
   }, [])
@@ -81,6 +84,10 @@ export default function App() {
     </div></div>
   )
   if (!api || me === undefined) return <div className="auth"><div><img src="myndir/logo-white.png" alt="BOX800" style={{ height: 60, display: 'block', margin: '0 auto' }} /><div className="spinner" /></div></div>
+  if (me && recovery) return <>
+    <NewPassword api={api} email={me.email} onDone={() => { try { sessionStorage.removeItem('box800-recovery') } catch { /* */ } setRecovery(false); toast('Nýja lykilorðið er komið. Velkomin(n)!') }} />
+    {msg && <div className="toast" role="status">{msg}</div>}
+  </>
   if (!me) return <>{<Login api={api} />}{msg && <div className="toast" role="status">{msg}</div>}</>
 
   const staff = me.role !== 'member'
