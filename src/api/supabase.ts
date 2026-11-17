@@ -87,6 +87,22 @@ export function supabaseApi(url: string, key: string): Api {
     supportPending: () => rpc('my_support_pending'),
     supportInbox: () => rpc('support_inbox'),
     async supportHandled(id) { await rpc('support_handled', { p_id: id }) },
+    myPromos: () => rpc('my_promos'),
+    async promoEvent(id, kind) { await rpc('promo_event', { p_id: id, p_kind: kind }) },
+    async promos() { return must(await sb.from('promos').select('*').order('created_at', { ascending: false })) },
+    async savePromo(p) {
+      const { id, ...rest } = p
+      if (id) must(await sb.from('promos').update(rest).eq('id', id))
+      else must(await sb.from('promos').insert(rest))
+    },
+    async deletePromo(id) { must(await sb.from('promos').delete().eq('id', id)) },
+    promoReach: (plan) => rpc('promo_reach', { p_plan: plan ?? '' }),
+    async uploadPromoLogo(img) {
+      const path = `samstarf/${Date.now()}.png`
+      const up = await sb.storage.from('avatars').upload(path, img, { contentType: img.type || 'image/png', upsert: true })
+      if (up.error) throw new Error(up.error.message)
+      return sb.storage.from('avatars').getPublicUrl(path).data.publicUrl
+    },
     async markNotificationRead(id) { must(await sb.from('notifications').update({ read_at: new Date().toISOString() }).eq('id', id)) },
     async markNotificationsRead() {
       const me = await rpc<string>('me')

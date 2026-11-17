@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useData } from '../ctx'
 import { Icon } from '../components/Icon'
 import ClassSheet from '../components/ClassSheet'
+import PromoCard from '../components/PromoCard'
 import { addDays, dayKey, dayStart, DAYS_SHORT, hhmm, mondayOf, parseLines, relDay, today } from '../util'
 import { kg } from '../score'
 import { useNow } from '../kiosk/shared'
@@ -21,6 +22,7 @@ export default function Home() {
   const { data: lifts } = useData((a) => a.myLifts())
   const { data: programs } = useData((a) => a.programs())
   const { data: wods } = useData((a) => a.workouts(t, t), [t])
+  const { data: promos } = useData((a) => a.myPromos())
 
   const upcoming = useMemo(() => (data ?? []).filter((c) => (c.my_status === 'booked' || c.my_status === 'waitlist') && new Date(c.ends_at) > now)
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at)), [data, now])
@@ -82,6 +84,9 @@ export default function Home() {
         <div><span>Samtals</span><b>{total}</b><small>tímar</small></div>
         <div><span>Markmið</span><b>{goal}</b><small>vantar {goal - total}</small><i style={{ width: pct + '%' }} /></div>
       </section>
+
+      {/* Kynningar frá samstarfsaðilum */}
+      {(promos ?? []).map((p) => <div key={p.id} style={{ padding: '14px 16px 0' }}><PromoCard p={p} /></div>)}
 
       {/* Æfing dagsins */}
       <div className="section-title"><Icon name="dumb" size={20} />Æfing dagsins{wodName ? ' · ' + wodName : ''}</div>

@@ -11,6 +11,7 @@ import titleSql from '../../supabase/migrations/010_nafn_tima.sql?raw'
 import noShowSql from '../../supabase/migrations/011_fjarvist.sql?raw'
 import insightSql from '../../supabase/migrations/012_innsyn.sql?raw'
 import supportSql from '../../supabase/migrations/013_skilabod.sql?raw'
+import promoSql from '../../supabase/migrations/014_samstarf.sql?raw'
 import demoSql from '../../supabase/demo/demo_seed.sql?raw'
 import type { Api, Profile, Settings, Workout } from './types'
 
@@ -41,6 +42,7 @@ export async function demoApi(): Promise<Api> {
   await db.exec(noShowSql)
   await db.exec(insightSql)
   await db.exec(supportSql)
+  await db.exec(promoSql)
   await db.exec(demoSql)
 
   let current: string | null = sessionStorageGet()
@@ -125,6 +127,17 @@ export async function demoApi(): Promise<Api> {
     supportPending: () => one<{ t: string | null }>(`select my_support_pending() t`).then((r) => r?.t ?? null),
     supportInbox: () => rows(`select * from support_inbox()`),
     supportHandled: async (id) => { await write(`select support_handled($1)`, [id]) },
+    myPromos: () => rows(`select * from my_promos()`),
+    promoEvent: async (id, k) => { await write(`select promo_event($1, $2)`, [id, k]) },
+    promos: () => rows(`select *, starts_on::text as starts_on, ends_on::text as ends_on from promos where is_owner() order by created_at desc`),
+    savePromo: async (p) => {
+      const v = [p.partner, p.title, p.body, p.code, p.url, p.logo_url, p.audience_plan, p.starts_on, p.ends_on, p.active]
+      if (p.id) await write(`update promos set partner=$1, title=$2, body=$3, code=$4, url=$5, logo_url=$6, audience_plan=$7, starts_on=$8, ends_on=$9, active=$10 where id=$11 and is_owner()`, [...v, p.id])
+      else await write(`insert into promos (partner, title, body, code, url, logo_url, audience_plan, starts_on, ends_on, active) select $1,$2,$3,$4,$5,$6,$7,$8,$9,$10 where is_owner()`, v)
+    },
+    deletePromo: async (id) => { await write(`delete from promos where id = $1 and is_owner()`, [id]) },
+    promoReach: (plan) => one<{ n: number }>(`select promo_reach($1) n`, [plan ?? '']).then((r) => Number(r?.n ?? 0)),
+    uploadPromoLogo: (img) => new Promise<string>((ok) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.readAsDataURL(img) }),
     markNotificationRead: async (id) => { await write(`update notifications set read_at = now() where id = $1 and profile_id = me()`, [id]) },
     markNotificationsRead: async () => { await write(`update notifications set read_at = now() where profile_id = me() and read_at is null`) },
     movements: () => rows(`select * from movements where active order by sort, name`),

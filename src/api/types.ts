@@ -119,6 +119,9 @@ export interface MemberRow {
 }
 
 export interface Notification { id: number; title: string; body: string | null; created_at: string; read_at: string | null; kind?: string | null }
+export interface Promo { id: number; partner: string; title: string; body: string | null; code: string | null; url: string | null; logo_url: string | null }
+export interface PromoInput { id?: number; partner: string; title: string; body: string | null; code: string | null; url: string | null; logo_url: string | null; audience_plan: string | null; starts_on: string; ends_on: string | null; active: boolean }
+export interface PromoAdmin extends PromoInput { id: number; clicks: number; copies: number; created_at: string }
 export interface SupportMessage { id: number; profile_id: string; full_name: string; email: string | null; phone: string | null; avatar_url: string | null; what: string | null; body: string | null; created_at: string; has_access: boolean }
 export interface Attendance { class_id: number; program: string; starts_at: string; checked_in: boolean }
 
@@ -200,6 +203,14 @@ export interface Api {
   supportPending(): Promise<string | null>
   supportInbox(): Promise<SupportMessage[]>
   supportHandled(id: number): Promise<void>
+  // samstarf / kynningar á forsíðu
+  myPromos(): Promise<Promo[]>
+  promoEvent(id: number, kind: 'click' | 'copy'): Promise<void>
+  promos(): Promise<PromoAdmin[]>
+  savePromo(p: PromoInput): Promise<void>
+  deletePromo(id: number): Promise<void>
+  promoReach(plan: string | null): Promise<number>
+  uploadPromoLogo(img: Blob): Promise<string>
   // innsýn (aðeins eigandi)
   insights(from: string, to: string): Promise<{ kind: 'attend' | 'noshow' | 'pr'; profile_id: string; full_name: string; avatar_url: string | null; n: number }[]>
   insightsSummary(from: string, to: string): Promise<{ visits: number; active_members: number; no_shows: number; prs: number; classes: number } | null>

@@ -16,6 +16,7 @@ import AdminClasses from './admin/AdminClasses'
 import AdminSettings from './admin/AdminSettings'
 import AdminMembers from './admin/AdminMembers'
 import AdminMemberProfile from './admin/AdminMemberProfile'
+import AdminPromos from './admin/AdminPromos'
 import AdminInsights from './admin/AdminInsights'
 import KioskPlus from './kiosk/KioskPlus'
 import Results from './pages/Results'
@@ -121,6 +122,7 @@ export default function App() {
               <Route path="idkendur" element={<AdminMembers />} />
               <Route path="idkendur/:id" element={<AdminMemberProfile />} />
               <Route path="innsyn" element={<AdminInsights />} />
+              <Route path="samstarf" element={<AdminPromos />} />
             </Route>
           )}
           <Route path="*" element={<Navigate to="/" replace />} />

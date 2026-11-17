@@ -25,6 +25,7 @@ try { await db.exec(fs.readFileSync(new URL('010_nafn_tima.sql', dir), 'utf8'));
 try { await db.exec(fs.readFileSync(new URL('011_fjarvist.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 011:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('012_innsyn.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 012:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('013_skilabod.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 013:', e.message, e.position); process.exit(1); }
+try { await db.exec(fs.readFileSync(new URL('014_samstarf.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 014:', e.message, e.position); process.exit(1); }
 console.log('Uppsetning tókst');
 
 // Notendur
@@ -245,6 +246,22 @@ ok(inbox.length === 1 && inbox[0].what === 'Áskrift', 'Skilaboð: eigandi sér 
 ok((await q(`select count(*)::int n from notifications where kind = 'support'`))[0].n >= 1, 'Skilaboð: eigandi fær tilkynningu');
 await q(`select support_handled($1)`, [inbox[0].id]);
 ok((await q(`select * from support_inbox()`)).length === 0, 'Skilaboð: afgreitt hverfur úr innhólfi');
+// Samstarf: kynning aðeins fyrir Mömmuhreysti-áskrift
+await as(U.eythor);
+await q(`insert into promos (partner, title, code, audience_plan) values ('Yrja', '20% afsláttur', 'BOX800', 'Mömmuhreysti')`);
+const reach0 = (await q(`select promo_reach('Mömmuhreysti') n`))[0].n;
+await as(members[2]);
+ok((await q(`select * from my_promos()`)).length === 0, 'Samstarf: sést ekki án Mömmuhreysti-áskriftar');
+await as(U.eythor);
+const pid2 = (await q(`select id from profiles where auth_id = $1`, [members[2]]))[0].id;
+await q(`insert into memberships (profile_id, plan) values ($1, 'Mömmuhreysti 3 mánuðir')`, [pid2]);
+ok((await q(`select promo_reach('Mömmuhreysti') n`))[0].n === reach0 + 1, 'Samstarf: fjöldi sem sér kynninguna');
+await as(members[2]);
+const pr = await q(`select * from my_promos()`);
+ok(pr.length === 1 && pr[0].code === 'BOX800', 'Samstarf: sést með Mömmuhreysti-áskrift');
+await q(`select promo_event($1, 'copy')`, [pr[0].id]);
+await as(U.eythor);
+ok((await q(`select copies from promos`))[0].copies === 1, 'Samstarf: afritun talin');
 
 console.log(fails ? `\n${fails} próf féllu` : '\nÖll próf stóðust');
 process.exit(fails ? 1 : 0);

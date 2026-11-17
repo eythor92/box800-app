@@ -454,3 +454,17 @@ a.btn { text-decoration: none; }
 .ins-row:hover { background: var(--card-2); }
 .ins-row .rk { width: 24px; color: var(--muted); font-size: 13px; text-align: right; flex-shrink: 0; }
 .ins-row b { font-family: var(--display); font-size: 22px; font-weight: 800; }
+
+/* Kynning frá samstarfsaðila */
+.promo { background: linear-gradient(135deg, #1b1f24, #14171b); border: 1px solid var(--line-2); border-radius: var(--r); padding: 16px; }
+.promo-top { display: flex; gap: 14px; align-items: center; }
+.promo-logo { width: 56px; height: 56px; flex-shrink: 0; border-radius: 10px; background: #fff; display: grid; place-items: center; overflow: hidden; padding: 6px; }
+.promo-logo img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.promo-kick { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.promo-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 800; font-size: 24px; line-height: 1.05; text-transform: uppercase; margin-top: 2px; }
+.promo-body { color: var(--text-2); margin-top: 10px; font-size: 15px; line-height: 1.45; white-space: pre-wrap; }
+.promo-code { width: 100%; margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 14px; border: 1.5px dashed #f2b84b; border-radius: var(--r); background: rgba(242, 184, 75, .06); color: var(--text); cursor: pointer; }
+.promo-code span { font-weight: 800; font-size: 20px; letter-spacing: .12em; }
+.promo-code em { font-style: normal; display: inline-flex; gap: 6px; align-items: center; font-size: 13px; font-weight: 700; color: #f2b84b; text-transform: uppercase; letter-spacing: .08em; }
+.promo-admin { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 760px) { .promo-admin { grid-template-columns: 1fr; } }

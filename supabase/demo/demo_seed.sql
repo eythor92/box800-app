@@ -133,3 +133,9 @@ where id in (select b.id from bookings b join classes c on c.id = b.class_id
 insert into support_messages (profile_id, what, phone, body, created_at)
 select id, 'Áskrift', '8671234', 'Keypti áskrift á Abler í gær en appið segir að ég sé ekki með kort.', now() - interval '2 hours'
 from profiles where role = 'member' and full_name <> 'Jón Jónsson' order by full_name offset 3 limit 1;
+
+-- Samstarf: dæmi um kynningu fyrir Mömmuhreysti-áskrift
+insert into promos (partner, title, body, code, url, audience_plan, copies, clicks)
+values ('Yrja', '20% afsláttur í vefverslun', 'Fyrir mömmurnar í Mömmuhreysti. Gildir út desember.', 'BOX800', 'yrja.is', 'Mömmuhreysti', 7, 12);
+insert into memberships (profile_id, plan)
+select id, 'Mömmuhreysti' from profiles where role = 'member' and full_name like '%dóttir' order by full_name limit 4;

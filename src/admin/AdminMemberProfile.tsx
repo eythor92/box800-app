@@ -196,7 +196,7 @@ export default function AdminMemberProfile() {
             <form className="stat" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: 10, alignItems: 'end', marginBottom: 12 }}
               onSubmit={async (e) => { e.preventDefault(); if (!nm.plan.trim()) { toast('Nafn áskriftar vantar'); return } try { await api.addMembership({ profile_id: id, plan: nm.plan.trim(), starts_on: nm.starts_on, ends_on: nm.ends_on || null }); toast('Áskrift skráð'); setNm(null); refresh() } catch (er) { toast(errMsg(er)) } }}>
               <label className="field"><span>Áskrift</span><input className="input" list="plans" value={nm.plan} onChange={(e) => setNm({ ...nm, plan: e.target.value })} placeholder="T.d. 12 mánaða samningur" autoFocus /></label>
-              <datalist id="plans">{['Mánaðaráskrift', '3 mánuðir', '12 mánaða samningur', '10 skipta kort', 'Námskeið', 'Þjálfari'].map((x) => <option key={x} value={x} />)}</datalist>
+              <datalist id="plans">{['Mánaðaráskrift', '3 mánuðir', '12 mánaða samningur', '10 skipta kort', 'Mömmuhreysti', 'Námskeið', 'Þjálfari'].map((x) => <option key={x} value={x} />)}</datalist>
               <label className="field"><span>Byrjar</span><input className="input" type="date" value={nm.starts_on} onChange={(e) => setNm({ ...nm, starts_on: e.target.value })} /></label>
               <label className="field"><span>Gildir til (autt = endurnýjast)</span><input className="input" type="date" value={nm.ends_on} onChange={(e) => setNm({ ...nm, ends_on: e.target.value })} /></label>
               <div className="row"><button type="button" className="btn btn-ghost btn-sm" onClick={() => setNm(null)}>Hætta við</button><button className="btn btn-primary btn-sm">Vista</button></div>
