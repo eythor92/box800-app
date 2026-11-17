@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useApp } from '../ctx'
 import { Icon } from '../components/Icon'
 
-export const BUY_URL = 'https://www.box800.is/verdskra.html'
+export const BUY_URL = 'https://abler.io/shop/box800'
 
 /** Forsíða fyrir þá sem eru ekki með virkt kort eða áskrift */
 export default function NoAccess() {

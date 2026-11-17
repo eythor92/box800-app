@@ -38,7 +38,7 @@ export default function MyProfile() {
       <div className="stat" style={{ marginTop: 18 }}>
         <div className="k">Áskrift</div>
         <div className="v" style={{ fontSize: 16 }}>{ms ? (live ? `${live.plan} · ${live.ends_on ? 'gildir til ' + dayLabel(live.ends_on) : 'endurnýjast'}` : 'Engin virk áskrift') : '…'}</div>
-        {ms && !live && <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>Til að bóka tíma þarf áskrift. Hafðu samband við BOX800 eða keyptu kort á box800.is.</div>}
+        {ms && !live && <div className="muted" style={{ fontSize: 13, marginTop: 4 }}>Til að bóka tíma þarf áskrift. Hafðu samband við BOX800 eða keyptu kort í vefverslun Abler.</div>}
       </div>
 
       {inp('full_name', 'Fullt nafn')}
