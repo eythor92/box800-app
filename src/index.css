@@ -225,9 +225,7 @@ a { color: var(--accent); }
 .a-side .sub { border-radius: var(--r); }
 .stepper button { border-radius: var(--r); }
 
-.auth { background:
-  linear-gradient(90deg, rgba(4,6,8,.94) 0%, rgba(4,6,8,.8) 50%, rgba(4,6,8,.55) 100%),
-  url('./assets/forsida.webp') 65% center / cover no-repeat, var(--bg); }
+.auth { background: var(--bg); }
 .toast { background: var(--accent); color: var(--accent-ink); }
 
 /* ==========================================

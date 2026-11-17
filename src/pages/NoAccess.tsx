@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useApp } from '../ctx'
 import { Icon } from '../components/Icon'
-import hero from '../assets/forsida.webp'
 
 export const BUY_URL = 'https://www.box800.is/verdskra.html'
 
@@ -11,7 +10,7 @@ export default function NoAccess() {
   const first = me.full_name.split(' ')[0]
   return (
     <>
-      <section className="h-hero" style={{ backgroundImage: `linear-gradient(180deg, rgba(5,6,8,.55) 0%, rgba(5,6,8,.85) 60%, var(--bg) 100%), url(${hero})`, paddingBottom: 30 }}>
+      <section className="h-hero" style={{ paddingBottom: 30 }}>
         <div className="h-kicker">Velkomin(n){first ? ', ' + first : ''}</div>
         <div className="h-big">Aðgangurinn þinn er tilbúinn</div>
         <p style={{ color: '#d9dde2', fontSize: 16, lineHeight: 1.5, marginTop: 12 }}>

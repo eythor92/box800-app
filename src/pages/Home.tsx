@@ -6,7 +6,6 @@ import ClassSheet from '../components/ClassSheet'
 import { addDays, dayKey, dayStart, DAYS_SHORT, errMsg, hhmm, mondayOf, parseLines, relDay, today, whenText } from '../util'
 import { kg } from '../score'
 import { useNow } from '../kiosk/shared'
-import hero from '../assets/forsida.webp'
 
 const MILESTONES = [10, 25, 50, 100, 150, 200, 250, 300, 400, 500, 750, 1000, 1500, 2000]
 const MONTHS_LONG = ['janúar', 'febrúar', 'mars', 'apríl', 'maí', 'júní', 'júlí', 'ágúst', 'september', 'október', 'nóvember', 'desember']
@@ -86,7 +85,7 @@ export default function Home() {
   return (
     <>
       {/* Haus með mynd úr stöðinni og næsta tíma */}
-      <section className="h-hero" style={{ backgroundImage: `linear-gradient(180deg, rgba(5,6,8,.55) 0%, rgba(5,6,8,.82) 55%, var(--bg) 100%), url(${hero})` }}>
+      <section className="h-hero">
         <div className="h-kicker">{greet}{first ? ', ' + first : ''}</div>
         {next ? (
           <>
