@@ -194,6 +194,9 @@ export interface Api {
   markNotificationsRead(): Promise<void>
   markNotificationRead(id: number): Promise<void>
   noShowCount(profileId: string): Promise<number>
+  // innsýn (aðeins eigandi)
+  insights(from: string, to: string): Promise<{ kind: 'attend' | 'noshow' | 'pr'; profile_id: string; full_name: string; avatar_url: string | null; n: number }[]>
+  insightsSummary(from: string, to: string): Promise<{ visits: number; active_members: number; no_shows: number; prs: number; classes: number } | null>
   subscribe(cb: () => void): () => void
   // skor og árangur
   movements(): Promise<Movement[]>

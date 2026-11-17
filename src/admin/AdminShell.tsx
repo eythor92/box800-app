@@ -7,12 +7,13 @@ const GROUPS: { id: string; label: string; icon: string; kids: [string, string][
   { id: 'aefingar', label: 'ÆFINGAR', icon: 'dumb', kids: [['/stjorn/aefingar', 'Æfingar dagsins']] },
   { id: 'timar', label: 'TÍMAR', icon: 'cal', kids: [['/stjorn/timar', 'Dagatal og fjöldi'], ['/stjorn/stillingar', 'Bókunarstillingar']] },
   { id: 'idkendur', label: 'IÐKENDUR', icon: 'people', kids: [['/stjorn/idkendur', 'Allir iðkendur']] },
+  { id: 'innsyn', label: 'INNSÝN', icon: 'chart', kids: [['/stjorn/innsyn', 'Mæting og árangur']] },
   { id: 'kiosk', label: 'VIÐBÆTUR', icon: 'grid', kids: [['/kiosk', 'Stöðvarskjár']] },
 ]
 
 export default function AdminShell() {
   const { me, api } = useApp()
-  const [open, setOpen] = useState<Record<string, boolean>>({ aefingar: true, timar: true, idkendur: true, kiosk: true })
+  const [open, setOpen] = useState<Record<string, boolean>>({ aefingar: true, timar: true, idkendur: true, innsyn: true, kiosk: true })
   return (
     <div className="a-shell">
       <aside className="a-side">

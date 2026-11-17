@@ -9,6 +9,7 @@ import dropinSql from '../../supabase/migrations/008_mynd_dropin.sql?raw'
 import accessSql from '../../supabase/migrations/009_adgangur.sql?raw'
 import titleSql from '../../supabase/migrations/010_nafn_tima.sql?raw'
 import noShowSql from '../../supabase/migrations/011_fjarvist.sql?raw'
+import insightSql from '../../supabase/migrations/012_innsyn.sql?raw'
 import demoSql from '../../supabase/demo/demo_seed.sql?raw'
 import type { Api, Profile, Settings, Workout } from './types'
 
@@ -37,6 +38,7 @@ export async function demoApi(): Promise<Api> {
   await db.exec(accessSql)
   await db.exec(titleSql)
   await db.exec(noShowSql)
+  await db.exec(insightSql)
   await db.exec(demoSql)
 
   let current: string | null = sessionStorageGet()
@@ -114,6 +116,8 @@ export async function demoApi(): Promise<Api> {
     searchProfiles: (q) => rows<Profile>(`select * from profiles where full_name ilike $1 order by full_name limit 8`, ['%' + q + '%']),
     myAttendance: () => rows(`select * from my_attendance()`),
     notifications: () => rows(`select * from notifications where profile_id = me() order by created_at desc limit 40`),
+    insights: (f, t) => rows(`select * from insights($1, $2)`, [f, t]),
+    insightsSummary: (f, t) => one(`select * from insights_summary($1, $2)`, [f, t]),
     noShowCount: (id) => one<{ n: number }>(`select no_show_count($1) n`, [id]).then((r) => Number(r?.n ?? 0)),
     markNotificationRead: async (id) => { await write(`update notifications set read_at = now() where id = $1 and profile_id = me()`, [id]) },
     markNotificationsRead: async () => { await write(`update notifications set read_at = now() where profile_id = me() and read_at is null`) },

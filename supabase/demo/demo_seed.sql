@@ -120,6 +120,11 @@ update profiles set full_name = 'Nýr Iðkandi' where email = 'nyr@box800.demo';
 -- Áminning um fjarvist fyrir Jón (prufa á glugganum)
 insert into notifications (profile_id, title, body, kind)
 select id, 'Við söknuðum þín í Hreysti 17:35 (' || to_char(current_date - 1, 'DD.MM.') || ')',
-       'Þú varst skráður en komst ekki. Ekkert mál! En mundu að afbóka ef þú kemst ekki, svo einhver af biðlistanum fái plássið.', 'no_show'
+       'Þú varst skráður en komst ekki. Ekkert mál! Mundu bara að afbóka ef þú kemst ekki.', 'no_show'
 from profiles where email = 'idkandi@box800.demo';
 update profiles set gender = 'karl' where email = 'idkandi@box800.demo';
+
+-- Nokkrar fjarvistir í gær (fyrir Innsýn)
+update bookings set status = 'no_show'
+where id in (select b.id from bookings b join classes c on c.id = b.class_id
+             where c.starts_at::date = current_date - 1 and b.status = 'booked' order by md5(b.id::text) limit 9);

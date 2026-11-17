@@ -23,6 +23,7 @@ try { await db.exec(fs.readFileSync(new URL('008_mynd_dropin.sql', dir), 'utf8')
 try { await db.exec(fs.readFileSync(new URL('009_adgangur.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 009:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('010_nafn_tima.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 010:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('011_fjarvist.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 011:', e.message, e.position); process.exit(1); }
+try { await db.exec(fs.readFileSync(new URL('012_innsyn.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 012:', e.message, e.position); process.exit(1); }
 console.log('Uppsetning tókst');
 
 // Notendur
@@ -226,6 +227,13 @@ ok((await q(`select * from component_leaderboard($1, 'a')`, [wk.id])).length ===
 ok((await q(`select * from lift_history($1, $2)`, [bs.id, await pid(members[1])])).length === 0, 'Iðkandi sér ekki sögu annarra');
 await expectErr(() => q(`select save_result($1)`, [{ id: r1, weight: 1 }]), 'fannst ekki', 'Iðkandi getur ekki breytt skori annars');
 await as(U.alda); ok((await q(`select * from lift_history($1, $2)`, [bs.id, await pid(members[1])])).length === 2, 'Þjálfari sér sögu iðkanda');
+
+// Innsýn (aðeins eigandi)
+await as(U.eythor);
+const ins = await q(`select * from insights('2000-01-01', current_date)`);
+ok(ins.some((r) => r.kind === 'noshow') && ins.some((r) => r.kind === 'attend'), 'Innsýn: listar yfir mætingu og fjarvistir');
+ok((await q(`select * from insights_summary(current_date - 30, current_date)`)).length === 1, 'Innsýn: heildartölur');
+await as(members[1]); ok((await q(`select * from insights('2000-01-01', current_date)`)).length === 0, 'Iðkandi sér ekki innsýn');
 
 console.log(fails ? `\n${fails} próf féllu` : '\nÖll próf stóðust');
 process.exit(fails ? 1 : 0);

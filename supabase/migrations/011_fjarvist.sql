@@ -27,7 +27,7 @@ begin
     update bookings set status = 'no_show', updated_at = now() where id = r.id;
     insert into notifications (profile_id, title, body, class_id, kind)
     values (r.profile_id, 'Við söknuðum þín í ' || class_label(r.cl),
-            'Þú varst ' || case r.gender when 'kona' then 'skráð' when 'karl' then 'skráður' else 'skráð/ur' end || ' en komst ekki. Ekkert mál! En mundu að afbóka ef þú kemst ekki, svo einhver af biðlistanum fái plássið.',
+            'Þú varst ' || case r.gender when 'kona' then 'skráð' when 'karl' then 'skráður' else 'skráð/ur' end || ' en komst ekki. Ekkert mál! Mundu bara að afbóka ef þú kemst ekki.',
             (r.cl).id, 'no_show');
     n := n + 1;
   end loop;
