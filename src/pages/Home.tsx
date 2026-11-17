@@ -63,7 +63,7 @@ export default function Home() {
         <div className="h-flame"><Icon name="flame" size={34} color={streak ? '#f2b84b' : 'var(--muted)'} /><b>{streak}</b></div>
         <div className="grow">
           <div className="h-sh">{streak} {streak % 10 === 1 && streak % 100 !== 11 ? 'vika' : 'vikur'} í röð</div>
-          <div className="muted" style={{ fontSize: 13 }}>{thisWeek ? 'Vikan er komin á blað. Vel gert!' : streak ? 'Mættu í vikunni til að halda þessu gangandi.' : 'Mættu í vikunni til að byrja.'}</div>
+          {(thisWeek || streak > 0) && <div className="muted" style={{ fontSize: 13 }}>{thisWeek ? 'Vikan er komin á blað. Vel gert!' : 'Mættu í vikunni til að halda þessu gangandi.'}</div>}
           <div className="h-week">
             {DAYS_SHORT.map((d, i) => {
               const k = addDays(week, i), done = attendedDays.has(k), booked = bookedDays.has(k) && k >= t
