@@ -56,7 +56,8 @@ export default function Home() {
   const sel = (data ?? []).find((c) => c.id === open)
 
   return (
-    <>
+    <div className="h-page">
+      <div className="h-col">
       {/* Vikuröð */}
       <section className="h-streak" style={{ marginTop: 18 }}>
         <div className="h-flame"><Icon name="flame" size={34} color={streak ? '#f2b84b' : 'var(--muted)'} /><b>{streak}</b></div>
@@ -86,6 +87,8 @@ export default function Home() {
       {/* Kynningar frá samstarfsaðilum */}
       {(promos ?? []).map((p) => <div key={p.id} style={{ padding: '14px 16px 0' }}><PromoCard p={p} /></div>)}
 
+      </div>
+      <div className="h-col">
       {/* Æfing dagsins */}
       <div className="section-title"><Icon name="dumb" size={20} />Æfing dagsins{wodName ? ' · ' + wodName : ''}</div>
       <div style={{ padding: '0 16px' }}>
@@ -125,8 +128,9 @@ export default function Home() {
         </>
       )}
 
+      </div>
       <div style={{ height: 10 }} />
       {sel && <ClassSheet c={sel} onClose={() => setOpen(null)} />}
-    </>
+    </div>
   )
 }

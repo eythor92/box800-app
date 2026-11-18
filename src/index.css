@@ -481,3 +481,23 @@ body.a-locked { overflow: hidden; }
 @media (max-width: 700px) { .a-top { display: flex; } }
 .promo-plans { margin-top: 8px; display: grid; gap: 12px; max-height: 300px; overflow-y: auto; padding: 10px 12px; border: 1px solid var(--line-2); border-radius: var(--r); background: var(--bg); }
 .link { color: var(--accent); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ===== Tölva: nýta allan skjáinn (valmynd vinstra megin, breiðara efni) ===== */
+@media (min-width: 1000px) {
+  .m-shell { max-width: none; padding-left: 232px; }
+  .m-top { padding: 12px 32px 10px; }
+  .m-head, .m-seg { max-width: 1160px; margin-left: auto; margin-right: auto; }
+  .m-content { max-width: 1160px; margin: 0 auto; padding: 8px 16px 48px; }
+  .m-nav { left: 0; top: 0; bottom: 0; transform: none; width: 232px; height: auto; border-radius: 0; border: 0; border-right: 1px solid var(--line-2);
+    display: flex; flex-direction: column; gap: 4px; padding: 96px 14px 20px; background: #0b0d0f; }
+  .m-nav a { flex-direction: row; justify-content: flex-start; gap: 14px; min-height: 50px; padding: 0 16px; font-size: 13px; }
+  .m-nav::before { content: ''; position: absolute; top: 24px; left: 30px; width: 108px; height: 46px; background: url('/myndir/logo-white.png') left center / contain no-repeat; }
+  .m-head .logo { visibility: hidden; }
+  /* forsíða í tveimur dálkum */
+  .h-page { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 8px 24px; align-items: start; }
+  .h-page > .h-col:first-child .h-streak { margin-top: 18px; }
+  .h-page > .h-col:nth-child(2) > .section-title:first-child { margin-top: 18px; }
+  /* gluggar fyrir miðju í stað þess að renna upp neðan frá */
+  .sheet { top: 50%; bottom: auto; transform: translate(-50%, -50%); border-radius: 8px; border: 1px solid var(--line-2); max-height: 86vh; width: min(620px, calc(100% - 64px)); }
+  .sheet .grip { display: none; }
+}
