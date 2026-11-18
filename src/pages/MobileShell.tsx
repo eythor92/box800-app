@@ -48,7 +48,7 @@ export default function MobileShell() {
             </div>
           )}
           <div className="m-head">
-            <button className="icon-btn" aria-label="Valmynd" onClick={() => setMenu(true)} style={{ justifyContent: 'flex-start' }}><Icon name="menu" size={26} /></button>
+            <button className="icon-btn m-menu-btn" aria-label="Valmynd" onClick={() => setMenu(true)} style={{ justifyContent: 'flex-start' }}><Icon name="menu" size={26} /></button>
             {title ? <div className="title">{title}</div> : <img className="logo" src="myndir/logo-white.png" alt="BOX800" />}
             <button className="icon-btn" aria-label={`Tilkynningar${unread ? `, ${unread} nýjar` : ''}`} onClick={openBell} style={{ justifyContent: 'flex-end', position: 'relative' }}>
               <Icon name="bell" size={26} />
@@ -67,6 +67,21 @@ export default function MobileShell() {
               <Icon name={icon} size={24} stroke={1.7} />{label}
             </NavLink>
           ))}
+          {/* Í tölvu: restin af valmyndinni er hér í stað hamborgarans */}
+          <div className="m-side-extra">
+            {access !== false && <NavLink to="/arangur">Árangur</NavLink>}
+            <NavLink to="/profill">Prófíllinn minn</NavLink>
+            <a href={BUY_URL} target="_blank" rel="noreferrer">Kaupa kort eða áskrift</a>
+            {me.role !== 'member' && <Link to="/kiosk">Stöðvarskjár</Link>}
+            {me.role === 'owner' && <Link to="/stjorn">Stjórnborð</Link>}
+            <div className="m-side-me">
+              <Link to="/profill" className="row" style={{ gap: 10, minWidth: 0, flex: 1, textDecoration: 'none' }}>
+                <Avatar src={me.avatar_url} name={me.full_name || me.email || '?'} size={36} />
+                <span className="ellipsis" style={{ fontWeight: 700, color: 'var(--text)' }}>{me.full_name || 'Án nafns'}</span>
+              </Link>
+              <button className="icon-btn" aria-label="Skrá út" title="Skrá út" onClick={() => api.signOut()}><Icon name="logout" size={20} /></button>
+            </div>
+          </div>
         </nav>
       )}
 
