@@ -25,7 +25,10 @@ export default function WorkoutPanel(pp: PanelProps) {
   const pid = cfg.prog || cur?.program_id || programs?.[0]?.id
   const prog = programs?.find((p) => p.id === pid)
   const w = (workouts ?? []).find((x) => x.program_id === pid && x.day === day)
-  const live = isLive(w, now) ? w : undefined
+  // Stöðvarskjárinn sýnir líka æfingu sem er ekki enn birt iðkendum (drög eða birtist síðar)
+  const live = w && w.components.length ? w : undefined
+  const hidden = !!live && !isLive(w, now)
+  const hiddenLabel = w?.status === 'draft' ? 'DRÖG' : 'EKKI BIRT IÐKENDUM'
 
   const body = useRef<HTMLDivElement>(null)
   const [bw, bh] = useSize(body)
@@ -42,12 +45,13 @@ export default function WorkoutPanel(pp: PanelProps) {
           <button className="kp-prog" onClick={() => setSettings('prog')} aria-label="Skipta um námskeið">
             <span className="cb-dot" style={{ background: prog?.color, width: 11, height: 11, border: 0 }} />{prog?.name ?? 'Námskeið'}{cfg.prog ? '' : ' · sjálfvirkt'}<Icon name="down" size={16} />
           </button>
+          {hidden && <span className="badge badge-warn" title="Iðkendur sjá þessa æfingu ekki enn í appinu">{hiddenLabel}</span>}
         </div>
       } />
       <div className="kp-body wp-body" ref={body}>
         {live
           ? <BigWorkout w={live} title={`${prog?.name ?? ''} – ${cap1(dayLabel(day))}`} scale={cfg.zoom} columns={cols} />
-          : <div className="cb-none" style={{ margin: 'auto' }}>Engin birt æfing fyrir {prog?.name ?? 'þetta námskeið'} {dayLabel(day)}</div>}
+          : <div className="cb-none" style={{ margin: 'auto' }}>Engin æfing komin fyrir {prog?.name ?? 'þetta námskeið'} {dayLabel(day)}</div>}
       </div>
       {settings && programs && (
         <PanelSettings cfg={cfg} day={day} programs={programs} autoName={cur?.program} startOpen={settings}

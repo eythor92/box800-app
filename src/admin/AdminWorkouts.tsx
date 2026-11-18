@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { Workout, WorkoutComponent } from '../api'
+import type { Movement, Program, Workout, WorkoutComponent } from '../api'
 import { useApp, useData } from '../ctx'
 import { Icon } from '../components/Icon'
 import { WorkoutRender } from '../pages/WorkoutView'
@@ -11,11 +11,97 @@ const SCALING = ['Engin', 'Scaled / Rx', 'Scaled / Rx / Rx+']
 const LABEL: Record<string, string> = { metcon: 'ÆFING', header: 'FYRIRSÖGN', lift: 'LYFTA', video: 'MYNDBAND', image: 'MYND' }
 const MODES: [Workout['publish_mode'], string][] = [['evening_before', 'Kvöldið áður kl. 20:00'], ['now', 'Strax'], ['morning', 'Sama dag kl. 05:00']]
 
+
 export default function AdminWorkouts() {
-  const { api, toast, refresh } = useApp()
   const [day, setDay] = useState(today())
   const [pid, setPid] = useState<number | null>(null)
-  const [view, setView] = useState<'day' | 'week'>('day')
+  const [view, setView] = useState<'day' | 'week' | 'builder'>('day')
+  const [days5, setDays5] = useState(true)
+  const week = mondayOf(day)
+  const { data: programs } = useData((a) => a.programs())
+  const { data: movements, reload: reloadMov } = useData((a) => a.movements())
+  const { data: workouts } = useData((a) => a.workouts(addDays(week, -7), addDays(week, 13)), [week])
+  const prog = pid ?? programs?.[0]?.id ?? null
+  const ctx = { programs: programs ?? [], movements: movements ?? [], workouts: workouts ?? [], reloadMov }
+  const step = view === 'day' ? 1 : 7
+
+  return (
+    <>
+      <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+        <div>
+          <h1>Æfingar dagsins</h1>
+          <div className="muted" style={{ fontSize: 14 }}>Aðeins eigandi skrifar og breytir æfingum. Þjálfarar og iðkendur sjá þær í appinu.</div>
+        </div>
+      </div>
+
+      <div className="row" style={{ gap: 26, marginTop: 22, borderBottom: '1px solid var(--line)' }}>
+        {([['day', 'DAGUR'], ['builder', 'VIKURITILL'], ['week', 'YFIRLIT']] as const).map(([v, l]) => (
+          <button key={v} onClick={() => setView(v)} style={{ minHeight: 44, fontWeight: 700, letterSpacing: .8, fontSize: 14, color: view === v ? '#fff' : 'var(--muted)', borderBottom: `3px solid ${view === v ? 'var(--accent)' : 'transparent'}` }}>{l}</button>
+        ))}
+      </div>
+
+      <div className="row" style={{ flexWrap: 'wrap', gap: 12, marginTop: 18, justifyContent: 'space-between' }}>
+        <div className="chips" style={{ flexWrap: 'wrap', flex: '1 1 420px' }}>
+          {(programs ?? []).map((x) => (
+            <button key={x.id} className={`chip${x.id === prog ? ' on' : ''}`} onClick={() => setPid(x.id)}><span className="dot" style={{ background: x.color }} />{x.name}</button>
+          ))}
+        </div>
+        <div className="row" style={{ gap: 10, flexWrap: 'wrap' }}>
+          {view === 'builder' && (
+            <div className="row" style={{ gap: 4, background: 'var(--card-2)', border: '1px solid var(--line)', borderRadius: 3, padding: 4 }}>
+              {([[true, 'Mán–fös'], [false, 'Öll vikan']] as const).map(([v, l]) => <button key={l} className={`chip${days5 === v ? ' on' : ''}`} style={{ minHeight: 36 }} onClick={() => setDays5(v)}>{l}</button>)}
+            </div>
+          )}
+          <div className="row" style={{ gap: 4, background: 'var(--card-2)', border: '1px solid var(--line)', borderRadius: 3, padding: 4 }}>
+            <button className="icon-btn" aria-label="Fyrri" onClick={() => setDay(addDays(day, -step))}><Icon name="back" /></button>
+            <div style={{ minWidth: 200, textAlign: 'center', fontWeight: 700 }}>{view !== 'day' ? `Vika ${dayLabel(week)} – ${dayLabel(addDays(week, 6))}` : cap1(dayLabel(day, true))}</div>
+            <button className="icon-btn" aria-label="Næsti" onClick={() => setDay(addDays(day, step))}><Icon name="next" /></button>
+          </div>
+        </div>
+      </div>
+
+      {view === 'week' && (
+        <div className="a-table" style={{ marginTop: 20 }}>
+          <div style={{ minWidth: 900 }}>
+            <div className="thead" style={{ gridTemplateColumns: '160px repeat(7, minmax(0,1fr))' }}>
+              <div>NÁMSKEIÐ</div>{Array.from({ length: 7 }, (_, i) => <div key={i} style={{ color: addDays(week, i) === today() ? 'var(--accent)' : undefined }}>{dayLabel(addDays(week, i)).toUpperCase()}</div>)}
+            </div>
+            {(programs ?? []).map((x) => (
+              <div key={x.id} className="tr" style={{ gridTemplateColumns: '160px repeat(7, minmax(0,1fr))' }}>
+                <div className="row" style={{ fontWeight: 600, fontSize: 14 }}><span className="dot" style={{ background: x.color }} />{x.name}</div>
+                {Array.from({ length: 7 }, (_, i) => {
+                  const d = addDays(week, i), ww = (workouts ?? []).find((z) => z.program_id === x.id && z.day === d)
+                  return (
+                    <button key={i} onClick={() => { setPid(x.id); setDay(d); setView('builder') }} style={{ minHeight: 56, padding: 6, borderRadius: 3, background: ww ? 'var(--card)' : 'transparent', fontSize: 13 }}>
+                      <div style={{ fontWeight: 600, color: ww ? 'var(--text)' : 'var(--accent)' }} className="ellipsis">{ww ? ww.components[0]?.title || 'Æfing' : '+ Skrifa'}</div>
+                      {ww && <div style={{ fontSize: 11, fontWeight: 800, color: ww.status === 'published' ? 'var(--ok)' : 'var(--muted)' }}>{ww.status === 'published' ? 'BIRT' : 'DRÖG'}</div>}
+                    </button>
+                  )
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {view === 'day' && prog != null && <DayEditor key={prog + day} prog={prog} day={day} {...ctx} />}
+
+      {view === 'builder' && prog != null && (
+        <div className="wk-board" style={{ ['--cols' as string]: days5 ? 5 : 7 }}>
+          {Array.from({ length: days5 ? 5 : 7 }, (_, i) => addDays(week, i)).map((d) => (
+            <DayEditor key={prog + d} prog={prog} day={d} compact {...ctx} />
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
+
+type Ctx = { programs: Program[]; movements: Movement[]; workouts: Workout[]; reloadMov: () => void }
+
+/** Ritill fyrir eina æfingu (eitt námskeið, einn dag). „compact“ = dálkur í vikuritlinum. */
+function DayEditor({ prog, day, compact, programs, movements, workouts, reloadMov }: Ctx & { prog: number; day: string; compact?: boolean }) {
+  const { api, toast, refresh } = useApp()
   const [draft, setDraft] = useState<Workout | null>(null)
   const [dirty, setDirty] = useState(false)
   const [chooser, setChooser] = useState(false)
@@ -26,20 +112,21 @@ export default function AdminWorkouts() {
   const kOf = (c: WorkoutComponent, i: number) => c.key ?? 'i' + i
   const isOpen = (c: WorkoutComponent, i: number) => openKeys.has(kOf(c, i))
   const toggle = (c: WorkoutComponent, i: number, on: boolean) => setOpenKeys((o) => { const n = new Set(o); if (on) n.add(kOf(c, i)); else n.delete(kOf(c, i)); return n })
-  const week = mondayOf(day)
-  const { data: programs } = useData((a) => a.programs())
-  const { data: movements, reload: reloadMov } = useData((a) => a.movements())
-  const { data: workouts } = useData((a) => a.workouts(addDays(week, -7), addDays(week, 13)), [week])
-  const prog = pid ?? programs?.[0]?.id ?? null
   const saved = useMemo(() => (workouts ?? []).find((w) => w.program_id === prog && w.day === day) ?? null, [workouts, prog, day])
   const taRefs = useRef<Record<number, HTMLTextAreaElement | null>>({})
 
   // Hlaða æfingu í ritil þegar skipt er um dag/námskeið (ekki yfirskrifa óvistaðar breytingar)
+  // (líka ef æfingin breytist annars staðar, t.d. „Endurnýta“ úr deginum á undan, nema hér séu óvistaðar breytingar)
+  const sig = saved ? `${saved.id}:${saved.status}:${JSON.stringify(saved.components)}` : ''
+  const lastId = useRef<string>('')
   useEffect(() => {
     if (prog == null) return
+    const ident = `${prog}:${day}:${saved?.id ?? ''}`
+    if (dirty && ident === lastId.current) return
+    lastId.current = ident
     setDraft(saved ? structuredClone(saved) : null); setDirty(false); setOpenKeys(new Set())
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [prog, day, saved?.id, saved?.status])
+  }, [prog, day, sig])
 
   const w: Workout = draft ?? { program_id: prog ?? 0, day, components: [], status: 'draft', publish_mode: 'evening_before' }
   const set = (fn: (w: Workout) => void) => { const n = structuredClone(w); fn(n); setDraft(n); setDirty(true) }
@@ -74,66 +161,8 @@ export default function AdminWorkouts() {
   const status = dirty ? ['ÓVISTAÐAR BREYTINGAR', '#3b321f', '#f2c97a'] : !saved ? ['VANTAR', '#3a2424', '#f0b0b0'] : saved.status === 'published' ? ['BIRT', '#1f3b2c', '#8fe0b0'] : ['DRÖG', '#2a2e33', '#c3cad1']
   const p = programs?.find((x) => x.id === prog)
 
-  return (
+  const body = (
     <>
-      <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-        <div>
-          <h1>Æfingar dagsins</h1>
-          <div className="muted" style={{ fontSize: 14 }}>Aðeins eigandi skrifar og breytir æfingum. Þjálfarar og iðkendur sjá þær í appinu.</div>
-        </div>
-      </div>
-
-      <div className="row" style={{ gap: 26, marginTop: 22, borderBottom: '1px solid var(--line)' }}>
-        {(['day', 'week'] as const).map((v) => (
-          <button key={v} onClick={() => setView(v)} style={{ minHeight: 44, fontWeight: 700, letterSpacing: .8, fontSize: 14, color: view === v ? '#fff' : 'var(--muted)', borderBottom: `3px solid ${view === v ? 'var(--accent)' : 'transparent'}` }}>{v === 'day' ? 'DAGUR' : 'VIKA'}</button>
-        ))}
-      </div>
-
-      <div className="row" style={{ flexWrap: 'wrap', gap: 12, marginTop: 18, justifyContent: 'space-between' }}>
-        <div className="chips" style={{ flexWrap: 'wrap', flex: '1 1 420px' }}>
-          {(programs ?? []).map((x) => (
-            <button key={x.id} className={`chip${x.id === prog ? ' on' : ''}`} onClick={() => setPid(x.id)}><span className="dot" style={{ background: x.color }} />{x.name}</button>
-          ))}
-        </div>
-        <div className="row" style={{ gap: 4, background: 'var(--card-2)', border: '1px solid var(--line)', borderRadius: 3, padding: 4 }}>
-          <button className="icon-btn" aria-label="Fyrri" onClick={() => setDay(addDays(day, view === 'week' ? -7 : -1))}><Icon name="back" /></button>
-          <div style={{ minWidth: 200, textAlign: 'center', fontWeight: 700 }}>{view === 'week' ? `Vika ${dayLabel(week)} – ${dayLabel(addDays(week, 6))}` : cap1(dayLabel(day, true))}</div>
-          <button className="icon-btn" aria-label="Næsti" onClick={() => setDay(addDays(day, view === 'week' ? 7 : 1))}><Icon name="next" /></button>
-        </div>
-      </div>
-
-      {view === 'week' && (
-        <div className="a-table" style={{ marginTop: 20 }}>
-          <div style={{ minWidth: 900 }}>
-            <div className="thead" style={{ gridTemplateColumns: '160px repeat(7, minmax(0,1fr))' }}>
-              <div>NÁMSKEIÐ</div>{Array.from({ length: 7 }, (_, i) => <div key={i} style={{ color: addDays(week, i) === today() ? 'var(--accent)' : undefined }}>{dayLabel(addDays(week, i)).toUpperCase()}</div>)}
-            </div>
-            {(programs ?? []).map((x) => (
-              <div key={x.id} className="tr" style={{ gridTemplateColumns: '160px repeat(7, minmax(0,1fr))' }}>
-                <div className="row" style={{ fontWeight: 600, fontSize: 14 }}><span className="dot" style={{ background: x.color }} />{x.name}</div>
-                {Array.from({ length: 7 }, (_, i) => {
-                  const d = addDays(week, i), ww = (workouts ?? []).find((z) => z.program_id === x.id && z.day === d)
-                  return (
-                    <button key={i} onClick={() => { setPid(x.id); setDay(d); setView('day') }} style={{ minHeight: 56, padding: 6, borderRadius: 3, background: ww ? 'var(--card)' : 'transparent', fontSize: 13 }}>
-                      <div style={{ fontWeight: 600, color: ww ? 'var(--text)' : 'var(--accent)' }} className="ellipsis">{ww ? ww.components[0]?.title || 'Æfing' : '+ Skrifa'}</div>
-                      {ww && <div style={{ fontSize: 11, fontWeight: 800, color: ww.status === 'published' ? 'var(--ok)' : 'var(--muted)' }}>{ww.status === 'published' ? 'BIRT' : 'DRÖG'}</div>}
-                    </button>
-                  )
-                })}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {view === 'day' && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, marginTop: 22, alignItems: 'flex-start' }}>
-          <section className="a-card" style={{ flex: '999 1 480px', minWidth: 0 }} aria-label="Ritill">
-            <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
-              <div className="row"><span className="dot" style={{ background: p?.color, width: 12, height: 12 }} /><h2 className="display" style={{ margin: 0, fontSize: 28 }}>{p?.name} – {dayLabel(day, true)}</h2></div>
-              <span className="badge" style={{ background: status[1], color: status[2] }}>{status[0]}</span>
-            </div>
-
             {w.components.length === 0 && (
               <div className="empty" style={{ marginTop: 18 }}>Engin æfing komin fyrir þennan dag.
                 <div className="row" style={{ justifyContent: 'center', marginTop: 14, flexWrap: 'wrap' }}>
@@ -155,7 +184,7 @@ export default function AdminWorkouts() {
                   <button className="btn btn-sm" style={{ color: 'var(--accent)' }} onClick={async () => {
                     const d = addDays(day, 1), ex = (workouts ?? []).find((z) => z.program_id === prog && z.day === d)
                     try { await api.saveWorkout({ ...(ex ?? { program_id: prog!, day: d, status: 'draft', publish_mode: w.publish_mode, components: [] }), day: d, components: [...(ex?.components ?? []), structuredClone(c)] }); refresh(); toast('Hluti afritaður á ' + dayLabel(d)) } catch (e) { toast(errMsg(e)) }
-                  }}><Icon name="reuse" size={16} />Endurnýta</button>
+                  }} title="Afrita þennan hluta á næsta dag"><Icon name="reuse" size={16} />{!compact && 'Endurnýta'}</button>
                   <button className="icon-btn" style={{ width: 36, height: 36, color: 'var(--danger)' }} aria-label="Eyða hluta" onClick={() => set((n) => { n.components.splice(i, 1) })}><Icon name="trash" size={18} /></button>
                 </div>
 
@@ -227,7 +256,7 @@ export default function AdminWorkouts() {
                 <div className="row" style={{ flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 22, paddingTop: 18, borderTop: '1px solid var(--line)', gap: 14 }}>
                   <div>
                     <label className="field"><span>Hvenær sjá iðkendur æfinguna?</span>
-                      <select className="select" style={{ minWidth: 260 }} value={w.publish_mode} onChange={(e) => set((n) => { n.publish_mode = e.target.value as Workout['publish_mode'] })}>
+                      <select className="select" style={{ minWidth: compact ? 0 : 260, width: compact ? '100%' : undefined }} value={w.publish_mode} onChange={(e) => set((n) => { n.publish_mode = e.target.value as Workout['publish_mode'] })}>
                         {MODES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                       </select>
                     </label>
@@ -240,8 +269,29 @@ export default function AdminWorkouts() {
                 </div>
               </>
             )}
-          </section>
 
+    </>
+  )
+
+  return (
+    <>
+      {compact ? (
+        <section className={`a-card wk-col${day === today() ? ' today' : ''}`} aria-label={'Ritill ' + dayLabel(day)}>
+          <div className="row" style={{ justifyContent: 'space-between', gap: 8 }}>
+            <b style={{ fontSize: 15 }}>{cap1(dayLabel(day, true))}</b>
+            <span className="badge" style={{ background: status[1], color: status[2] }}>{status[0]}</span>
+          </div>
+          {body}
+        </section>
+      ) : (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 24, marginTop: 22, alignItems: 'flex-start' }}>
+          <section className="a-card" style={{ flex: '999 1 480px', minWidth: 0 }} aria-label="Ritill">
+            <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap' }}>
+              <div className="row"><span className="dot" style={{ background: p?.color, width: 12, height: 12 }} /><h2 className="display" style={{ margin: 0, fontSize: 28 }}>{p?.name} – {dayLabel(day, true)}</h2></div>
+              <span className="badge" style={{ background: status[1], color: status[2] }}>{status[0]}</span>
+            </div>
+            {body}
+          </section>
           <aside style={{ flex: '1 1 280px', maxWidth: 340 }} aria-label="Forskoðun">
             <div className="label" style={{ marginBottom: 8 }}>Svona sést þetta í appinu</div>
             <div style={{ border: '1px solid var(--line)', borderRadius: 3, background: 'var(--bg)', padding: '18px 16px 20px', fontSize: 14 }}>
@@ -251,7 +301,6 @@ export default function AdminWorkouts() {
           </aside>
         </div>
       )}
-
       {chooser && (
         <>
           <button className="modal-back" aria-label="Loka" onClick={() => setChooser(false)} />
@@ -315,3 +364,4 @@ function CompPreview({ c, onOpen }: { c: WorkoutComponent; onOpen: () => void })
     </div>
   )
 }
+
