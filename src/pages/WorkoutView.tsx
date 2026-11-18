@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import type { Result, Workout, WorkoutComponent } from '../api'
 import { useData } from '../ctx'
@@ -6,9 +6,8 @@ import { useNavigate } from 'react-router-dom'
 import ScoreSheet from '../components/ScoreSheet'
 import { compKey, compTitle, fmtResult, kindOf } from '../score'
 import { Icon } from '../components/Icon'
-import ClassSheet from '../components/ClassSheet'
-import { ClassRowView, DayBar } from './Schedule'
-import { addDays, cap1, dayKey, dayLabel, dayStart, mondayOf, parseLines, today } from '../util'
+import { DayBar } from './Schedule'
+import { addDays, dayLabel, mondayOf, parseLines, today } from '../util'
 import { useSwipeDays } from '../swipe'
 
 export interface ScoreCtx {
@@ -54,17 +53,13 @@ export default function WorkoutView({ coach = false }: { coach?: boolean }) {
   const [day, setDay] = useState(params.get('d') ?? today())
   useSwipeDays(() => setDay((d) => addDays(d, 1)), () => setDay((d) => addDays(d, -1)))
   const [prog, setProg] = useState<number | null>(params.get('p') ? Number(params.get('p')) : null)
-  const [open, setOpen] = useState<number | null>(null)
   const week = mondayOf(day)
   const { data: programs } = useData((a) => a.programs())
   const { data: workouts } = useData((a) => a.workouts(week, addDays(week, 6)), [week])
-  const { data: classes } = useData((a) => a.classList(dayStart(day), dayStart(addDays(day, 1))), [day])
   const pid = prog ?? programs?.[0]?.id ?? null
   const p = programs?.find((x) => x.id === pid)
   const w = (workouts ?? []).find((x) => x.program_id === pid && x.day === day)
   const visible = w && (coach || w.status === 'published')
-  const cls = useMemo(() => (classes ?? []).filter((c) => c.program_id === pid && dayKey(new Date(c.starts_at)) === day), [classes, pid, day])
-  const sel = (classes ?? []).find((c) => c.id === open)
   const nav = useNavigate()
   const { data: results } = useData((a) => a.myComponentResults(day, day), [day])
   const [log, setLog] = useState<null | { c: WorkoutComponent; i: number; r?: Result }>(null)
@@ -97,15 +92,6 @@ export default function WorkoutView({ coach = false }: { coach?: boolean }) {
           </div>
         )}
       </div>
-      {cls.length > 0 && (
-        <>
-          <div style={{ marginTop: 26, background: 'var(--card-2)', padding: '14px 16px', fontWeight: 700, fontSize: 17, borderTop: '1px solid var(--line)', borderBottom: '1px solid var(--line)' }}>
-            <Icon name="cal" size={18} style={{ verticalAlign: -3, marginRight: 8 }} />{cap1(dayLabel(day, true))} – tímar með þessari æfingu
-          </div>
-          {cls.map((c) => <ClassRowView key={c.id} c={c} onOpen={() => setOpen(c.id)} />)}
-        </>
-      )}
-      {sel && <ClassSheet c={sel} onClose={() => setOpen(null)} />}
       {log && w?.id && (
         <ScoreSheet title={compTitle(log.c)} sub={p?.name + ' · ' + dayLabel(day)} scaling={log.c.scaling} onClose={() => setLog(null)}
           initial={log.r ?? { day, workout_id: w.id, comp_key: compKey(log.c, log.i), kind: kindOf(log.c)!, movement_id: log.c.movement_id ?? null, sets: log.c.sets ?? 1, reps: log.c.reps ?? null }} />
