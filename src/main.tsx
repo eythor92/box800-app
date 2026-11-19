@@ -11,6 +11,9 @@ import '@fontsource/inter/latin-ext-700.css'
 import '@fontsource/barlow-condensed/latin-ext-800.css'
 import './index.css'
 import App from './App'
+import { installSheetDrag } from './sheetDrag'
+
+installSheetDrag()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
