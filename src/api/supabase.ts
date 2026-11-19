@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Api, Profile, Workout, WorkoutComponent } from './types'
+import type { Api, Profile, PtVideo, Workout, WorkoutComponent } from './types'
 
 export function supabaseApi(url: string, key: string): Api {
   // Hlekkir úr tölvupósti (staðfesting, nýtt lykilorð) koma með #access_token=… í slóðinni.
@@ -160,6 +160,37 @@ export function supabaseApi(url: string, key: string): Api {
       if (id) qy = qy.eq('profile_id', id)
       return (must(await qy) as { id: number; day: string; components: WorkoutComponent[]; status: Workout['status'] }[])
         .map((r) => ({ ...r, program_id: 0, publish_mode: 'now' as const }))
+    },
+    async ptVideos(id) { return must(await sb.from('pt_videos').select('*').eq('profile_id', id).order('created_at', { ascending: false }).limit(60)) as PtVideo[] },
+    async uploadPtVideo(id, day, file, note, onProgress) {
+      const ext = (file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4'
+      const path = `${id}/${day}-${Date.now()}.${ext}`
+      // Hlaða upp með framvindu (XHR), svo fólk sjái að eitthvað sé að gerast
+      const { data: s } = await sb.auth.getSession()
+      await new Promise<void>((ok, bad) => {
+        const x = new XMLHttpRequest()
+        x.open('POST', `${url}/storage/v1/object/pt-videos/${path}`)
+        x.setRequestHeader('Authorization', 'Bearer ' + (s.session?.access_token ?? key))
+        x.setRequestHeader('apikey', key)
+        x.setRequestHeader('x-upsert', 'false')
+        x.setRequestHeader('Content-Type', file.type || 'video/mp4')
+        x.upload.onprogress = (e) => { if (e.lengthComputable) onProgress?.(e.loaded / e.total) }
+        x.onload = () => (x.status < 300 ? ok() : bad(new Error(x.status === 413 ? 'Myndbandið er of stórt (mest 100 MB). Prófaðu styttra myndband.' : 'Gat ekki hlaðið myndbandinu upp')))
+        x.onerror = () => bad(new Error('Tenging rofnaði. Reyndu aftur.'))
+        x.send(file)
+      })
+      must(await sb.from('pt_videos').insert({ profile_id: id, day, path, note: note.trim() || null, size_bytes: file.size }))
+    },
+    async ptVideoUrl(path) {
+      const r = await sb.storage.from('pt-videos').createSignedUrl(path, 3600)
+      if (r.error) throw new Error(r.error.message)
+      return r.data.signedUrl
+    },
+    async ptVideoFeedback(id, text) { await rpc('pt_video_feedback', { p_id: id, p_text: text }) },
+    async ptVideoSeen(id) { await rpc('pt_video_seen', { p_id: id }) },
+    async deletePtVideo(v) {
+      await sb.storage.from('pt-videos').remove([v.path])
+      must(await sb.from('pt_videos').delete().eq('id', v.id))
     },
     async savePtWorkout(id, day, components, status) { await rpc('save_pt_workout', { p_profile: id, p_day: day, p_components: components, p_status: status }) },
     punchUsage: (id) => rpc('punch_usage', { p_profile: id }),

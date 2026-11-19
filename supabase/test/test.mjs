@@ -30,6 +30,7 @@ try { await db.exec(fs.readFileSync(new URL('015_bidlisti.sql', dir), 'utf8')); 
 try { await db.exec(fs.readFileSync(new URL('016_samstarf_fleiri.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 016:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('018_klippikort.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 018:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('019_einkathjalfun.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 019:', e.message, e.position); process.exit(1); }
+try { await db.exec(fs.readFileSync(new URL('020_myndbond.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 020:', e.message, e.position); process.exit(1); }
 console.log('Uppsetning tókst');
 
 // Notendur
@@ -223,6 +224,13 @@ await q(`select save_pt_workout($1, current_date, '[{"type":"metcon","title":"Da
 await as(members[2]);
 ok((await q(`select has_pt() x`))[0].x === true, '1 on 1: með einkaþjálfun');
 ok((await q(`select count(*)::int n from notifications where kind = 'pt'`))[0].n === 1, '1 on 1: tilkynning við birtingu');
+const [vid] = await q(`insert into pt_videos (profile_id, day, path, note) values ($1::uuid, current_date, $1::text || '/a.mp4', 'Hvernig er formið?') returning id`, [ptp]);
+await as(U.eythor);
+ok((await q(`select count(*)::int n from notifications where kind = 'pt_video'`))[0].n >= 1, 'Myndband: eigandi fær tilkynningu');
+await q(`select pt_video_feedback($1, 'Flott! Haltu bakinu beinu.')`, [vid.id]);
+await as(members[2]);
+ok((await q(`select count(*)::int n from notifications where kind = 'pt_feedback'`))[0].n === 1, 'Myndband: iðkandi fær endurgjöf');
+await expectErr(() => q(`select pt_video_feedback($1, 'x')`, [vid.id]), 'Aðeins þjálfarar', 'Myndband: iðkandi gefur ekki endurgjöf');
 
 // Eigið nafn á tíma
 await as(U.eythor);

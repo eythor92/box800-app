@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useData } from '../ctx'
 import { Icon } from '../components/Icon'
 import { DayEditor } from './AdminWorkouts'
+import PtVideos from '../components/PtVideos'
 import { addDays, dayLabel, mondayOf, today } from '../util'
 
 /** 1 on 1: vikuritill fyrir æfingar eins iðkanda (á prófíl í stjórnborði) */
@@ -32,6 +33,7 @@ export default function PtPlanner({ profileId, name }: { profileId: string; name
             programs={[]} movements={movements ?? []} workouts={workouts ?? []} reloadMov={reloadMov} />
         ))}
       </div>
+      <PtVideos profileId={profileId} staff name={name} />
     </section>
   )
 }

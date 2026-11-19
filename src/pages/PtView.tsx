@@ -4,6 +4,7 @@ import { DayBar } from './Schedule'
 import { WorkoutRender } from './WorkoutView'
 import { addDays, dayLabel, mondayOf, today } from '../util'
 import { useSwipeDays } from '../swipe'
+import PtVideos from '../components/PtVideos'
 
 /** 1 on 1: æfingar sem þjálfarinn skrifar bara fyrir þig */
 export default function PtView() {
@@ -27,6 +28,8 @@ export default function PtView() {
         <div className="label">1 on 1 · {me.full_name.split(' ')[0]}</div>
         <div className="display" style={{ fontSize: 28 }}>{dayLabel(day)}</div>
         {w ? <WorkoutRender w={w} /> : <div className="empty" style={{ marginTop: 18 }}>Engin æfing fyrir þennan dag. Þjálfarinn þinn setur æfingarnar hér inn.</div>}
+        <PtVideos profileId={me.id} day={day} />
+        <div style={{ height: 24 }} />
       </div>
     </>
   )

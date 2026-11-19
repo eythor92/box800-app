@@ -16,6 +16,7 @@ import waitSql from '../../supabase/migrations/015_bidlisti.sql?raw'
 import promo2Sql from '../../supabase/migrations/016_samstarf_fleiri.sql?raw'
 import punchSql from '../../supabase/migrations/018_klippikort.sql?raw'
 import ptSql from '../../supabase/migrations/019_einkathjalfun.sql?raw'
+import ptvSql from '../../supabase/migrations/020_myndbond.sql?raw'
 import demoSql from '../../supabase/demo/demo_seed.sql?raw'
 import type { Api, Profile, Settings, Workout } from './types'
 
@@ -51,8 +52,10 @@ export async function demoApi(): Promise<Api> {
   await db.exec(promo2Sql)
   await db.exec(punchSql)
   await db.exec(ptSql)
+  await db.exec(ptvSql)
   await db.exec(demoSql)
 
+  const demoBlobs = new Map<string, string>()
   let current: string | null = sessionStorageGet()
   const listeners = new Set<() => void>()
   const changed = () => listeners.forEach((f) => f())
@@ -174,6 +177,16 @@ export async function demoApi(): Promise<Api> {
     hasPt: (id) => one<{ x: boolean }>(`select has_pt($1) x`, [id ?? null]).then((r) => !!r?.x),
     ptWorkouts: (id, from, to) => rows<Workout>(`select id, 0 as program_id, to_char(day, 'YYYY-MM-DD') as day, components, status, 'now' as publish_mode from pt_workouts
        where day between $2 and $3 and ($1::uuid is null or profile_id = $1) and (is_staff() or (status = 'published' and profile_id = me()))`, [id, from, to]),
+    ptVideos: (id) => rows(`select id, profile_id, to_char(day, 'YYYY-MM-DD') as day, path, note, size_bytes, created_at, feedback, feedback_at, seen_at from pt_videos where profile_id = $1 and (profile_id = me() or is_staff()) order by created_at desc`, [id]),
+    uploadPtVideo: async (id, day, file, note, onProgress) => {
+      for (let i = 1; i <= 5; i++) { await new Promise((r) => setTimeout(r, 120)); onProgress?.(i / 5) }
+      demoBlobs.set(`${id}/${day}-${file.name}`, URL.createObjectURL(file))
+      await write(`insert into pt_videos (profile_id, day, path, note, size_bytes) values ($1, $2, $3, $4, $5)`, [id, day, `${id}/${day}-${file.name}`, note.trim() || null, file.size])
+    },
+    ptVideoUrl: async (path) => demoBlobs.get(path) ?? 'myndir/demo-video.mp4',
+    ptVideoFeedback: async (id, t) => { await write(`select pt_video_feedback($1, $2)`, [id, t]) },
+    ptVideoSeen: async (id) => { await write(`select pt_video_seen($1)`, [id]) },
+    deletePtVideo: async (v) => { await write(`delete from pt_videos where id = $1 and (profile_id = me() or is_staff())`, [v.id]) },
     savePtWorkout: async (id, day, c, st) => { await write(`select save_pt_workout($1, $2, $3, $4)`, [id, day, JSON.stringify(c), st]) },
     endMembership: async (id) => { await write(`update memberships set status = 'cancelled' where id = $1`, [id]) },
     uploadAvatar: async (pid, jpeg) => {

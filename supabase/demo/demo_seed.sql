@@ -149,3 +149,9 @@ insert into memberships (profile_id, plan) select id, 'Einkaþjálfun' from prof
 insert into pt_workouts (profile_id, day, status, components)
 select id, current_date, 'published', '[{"type":"header","title":"Upphitun","key":"p1"},{"type":"metcon","title":"10 mín","body":"Hjól rólega\n10 air squats\n10 armbeygjur","key":"p2"},{"type":"metcon","title":"Styrkur","body":"*4 umferðir*\n8 goblet squat\n10 róður á hvora hendi\n30s planki","key":"p3"}]'
 from profiles where full_name = 'Jón Jónsson';
+
+-- Myndband frá Jóni með endurgjöf
+insert into pt_videos (profile_id, day, path, note, size_bytes, created_at, feedback, feedback_at)
+select id, current_date - 1, id || '/demo.mp4', 'Er bakið nógu beint í neðstu stöðu?', 24000000, now() - interval '20 hours',
+       'Mjög flott! Bakið er beint. Prófaðu að ýta hnjánum aðeins meira út í botninum.', now() - interval '18 hours'
+from profiles where full_name = 'Jón Jónsson';

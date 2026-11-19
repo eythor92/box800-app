@@ -123,6 +123,7 @@ export interface Notification { id: number; title: string; body: string | null; 
 export interface Promo { id: number; partner: string; title: string; body: string | null; code: string | null; url: string | null; logo_url: string | null }
 export interface PromoInput { id?: number; partner: string; title: string; body: string | null; code: string | null; url: string | null; logo_url: string | null; audience_plan: string | null; starts_on: string; ends_on: string | null; active: boolean }
 export interface PromoAdmin extends PromoInput { id: number; clicks: number; copies: number; created_at: string }
+export interface PtVideo { id: number; profile_id: string; day: string; path: string; note: string | null; size_bytes: number | null; created_at: string; feedback: string | null; feedback_at: string | null; seen_at: string | null; url?: string }
 export interface SupportMessage { id: number; profile_id: string; full_name: string; email: string | null; phone: string | null; avatar_url: string | null; what: string | null; body: string | null; created_at: string; has_access: boolean }
 export interface Attendance { class_id: number; program: string; starts_at: string; checked_in: boolean }
 
@@ -241,6 +242,12 @@ export interface Api {
   hasPt(profileId?: string): Promise<boolean>
   ptWorkouts(profileId: string | null, from: string, to: string): Promise<Workout[]>
   savePtWorkout(profileId: string, day: string, components: WorkoutComponent[], status: Workout['status']): Promise<void>
+  ptVideos(profileId: string): Promise<PtVideo[]>
+  uploadPtVideo(profileId: string, day: string, file: File, note: string, onProgress?: (p: number) => void): Promise<void>
+  ptVideoUrl(path: string): Promise<string>
+  ptVideoFeedback(id: number, text: string): Promise<void>
+  ptVideoSeen(id: number): Promise<void>
+  deletePtVideo(v: PtVideo): Promise<void>
   punchUsage(profileId: string): Promise<{ id: number; used: number; booked_ahead: number }[]>
   endMembership(id: number): Promise<void>
   /** Hleður upp mynd (JPEG) og setur sem prófílmynd. Skilar slóðinni. */
