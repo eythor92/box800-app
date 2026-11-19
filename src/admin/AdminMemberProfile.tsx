@@ -40,6 +40,8 @@ export default function AdminMemberProfile() {
   const { api, me, toast, refresh } = useApp()
   const { data: p, error } = useData((a) => a.getProfile(id), [id])
   const { data: ms } = useData((a) => a.membershipsOf(id), [id])
+  const { data: pu } = useData((a) => a.punchUsage(id), [id])
+  const [pe, setPe] = useState<null | { id: number; punches: string; before: string }>(null)
   const { data: att } = useData((a) => a.attendanceOf(id), [id])
   const { data: lifts } = useData((a) => a.liftsOf(id), [id])
   const [tab, setTab] = useState<Tab>('info')
@@ -47,7 +49,7 @@ export default function AdminMemberProfile() {
   const [menu, setMenu] = useState(false)
   const [addCls, setAddCls] = useState(false)
   const [confirmDel, setConfirmDel] = useState(false)
-  const [nm, setNm] = useState<null | { plan: string; starts_on: string; ends_on: string; other?: boolean }>(null)
+  const [nm, setNm] = useState<null | { plan: string; starts_on: string; ends_on: string; other?: boolean; punches?: string }>(null)
   const [busy, setBusy] = useState(false)
   useEffect(() => { if (p) setF({ ...p }) }, [p])
 
@@ -195,14 +197,14 @@ export default function AdminMemberProfile() {
             <button className="btn btn-primary btn-sm" onClick={() => setNm({ plan: '', starts_on: today(), ends_on: '', other: false })}>+ Áskrift</button>
           </div>
           {nm && (
-            <form className="stat" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr auto', gap: 10, alignItems: 'end', marginBottom: 12 }}
-              onSubmit={async (e) => { e.preventDefault(); if (!nm.plan.trim()) { toast('Nafn áskriftar vantar'); return } try { await api.addMembership({ profile_id: id, plan: nm.plan.trim(), starts_on: nm.starts_on, ends_on: nm.ends_on || null }); toast('Áskrift skráð'); setNm(null); refresh() } catch (er) { toast(errMsg(er)) } }}>
+            <form className="stat" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 110px auto', gap: 10, alignItems: 'end', marginBottom: 12 }}
+              onSubmit={async (e) => { e.preventDefault(); if (!nm.plan.trim()) { toast('Nafn áskriftar vantar'); return } try { await api.addMembership({ profile_id: id, plan: nm.plan.trim(), starts_on: nm.starts_on, ends_on: nm.ends_on || null, punches: nm.punches ? Number(nm.punches) : null }); toast('Áskrift skráð'); setNm(null); refresh() } catch (er) { toast(errMsg(er)) } }}>
               <label className="field"><span>Áskrift</span>
                 {nm.other
                   ? <input className="input" value={nm.plan} onChange={(e) => setNm({ ...nm, plan: e.target.value })} placeholder="Skrifaðu nafn áskriftar" autoFocus />
                   : <select className="select" value={nm.plan} autoFocus onChange={(e) => {
                       if (e.target.value === '__annad') { setNm({ ...nm, plan: '', other: true }); return }
-                      setNm({ ...nm, plan: e.target.value, ends_on: planEnd(findPlan(e.target.value), nm.starts_on) })
+                      setNm({ ...nm, plan: e.target.value, ends_on: planEnd(findPlan(e.target.value), nm.starts_on), punches: /10 skipta/i.test(e.target.value) ? '10' : '' })
                     }}>
                       <option value="">Veldu áskrift…</option>
                       {PLAN_GROUPS.map((g) => <optgroup key={g.label} label={g.label}>{g.plans.map((x) => <option key={x.name} value={x.name}>{x.name}</option>)}</optgroup>)}
@@ -211,6 +213,7 @@ export default function AdminMemberProfile() {
               </label>
               <label className="field"><span>Byrjar</span><input className="input" type="date" value={nm.starts_on} onChange={(e) => setNm({ ...nm, starts_on: e.target.value, ends_on: findPlan(nm.plan) ? planEnd(findPlan(nm.plan), e.target.value) : nm.ends_on })} /></label>
               <label className="field"><span>Gildir til (autt = endurnýjast)</span><input className="input" type="date" value={nm.ends_on} onChange={(e) => setNm({ ...nm, ends_on: e.target.value })} /></label>
+              <label className="field"><span>Skipti</span><input className="input" type="number" min={1} value={nm.punches ?? ''} onChange={(e) => setNm({ ...nm, punches: e.target.value })} placeholder="Ótakm." /></label>
               <div className="row"><button type="button" className="btn btn-ghost btn-sm" onClick={() => setNm(null)}>Hætta við</button><button className="btn btn-primary btn-sm">Vista</button></div>
             </form>
           )}
@@ -222,7 +225,29 @@ export default function AdminMemberProfile() {
                 const live = m.status === 'active' && (!m.ends_on || m.ends_on >= today())
                 return (
                   <div key={m.id} className="tr" style={{ gridTemplateColumns: '2fr 1fr 1fr 1fr' }}>
-                    <div style={{ fontWeight: 700 }}>{m.plan}</div><div>{dayLabel(m.starts_on)}</div><div>{m.ends_on ? dayLabel(m.ends_on) : 'Endurnýjast'}</div>
+                    <div>
+                      <div style={{ fontWeight: 700 }}>{m.plan}</div>
+                      {m.punches ? (() => {
+                        const u = pu?.find((x) => x.id === m.id), used = u?.used ?? m.punches_before ?? 0, ahead = u?.booked_ahead ?? 0, left = Math.max(0, m.punches - used - ahead)
+                        return (
+                          <div className="muted" style={{ fontSize: 13 }}>
+                            <b style={{ color: left ? 'var(--text)' : 'var(--warn)' }}>{left} af {m.punches} eftir</b> · {used} notuð{ahead ? ` · ${ahead} bókuð` : ''}{m.punches_before ? ` (þar af ${m.punches_before} fyrir appið)` : ''}
+                            {' '}<button className="link" style={{ fontSize: 13 }} onClick={() => setPe({ id: m.id, punches: String(m.punches), before: String(m.punches_before ?? 0) })}>Breyta</button>
+                          </div>
+                        )
+                      })() : null}
+                      {pe?.id === m.id && (
+                        <form className="row" style={{ gap: 8, marginTop: 8, flexWrap: 'wrap', alignItems: 'flex-end' }} onSubmit={async (e) => {
+                          e.preventDefault()
+                          try { await api.updateMembership(m.id, { punches: Number(pe.punches) || null, punches_before: Math.max(0, Number(pe.before) || 0) }); toast('Vistað'); setPe(null); refresh() } catch (er) { toast(errMsg(er)) }
+                        }}>
+                          <label className="field" style={{ width: 90 }}><span>Skipti</span><input className="input" type="number" min={1} value={pe.punches} onChange={(e) => setPe({ ...pe, punches: e.target.value })} /></label>
+                          <label className="field" style={{ width: 130 }}><span>Notuð fyrir appið</span><input className="input" type="number" min={0} value={pe.before} onChange={(e) => setPe({ ...pe, before: e.target.value })} /></label>
+                          <button className="btn btn-primary btn-sm">Vista</button><button type="button" className="btn btn-ghost btn-sm" onClick={() => setPe(null)}>Hætta við</button>
+                        </form>
+                      )}
+                    </div>
+                    <div>{dayLabel(m.starts_on)}</div><div>{m.ends_on ? dayLabel(m.ends_on) : 'Endurnýjast'}</div>
                     <div className="row" style={{ gap: 8 }}><span className={`badge ${live ? 'badge-ok' : 'badge-grey'}`}>{live ? 'VIRK' : 'ÓVIRK'}</span>
                       {live && <button className="btn btn-ghost btn-sm" onClick={async () => { try { await api.endMembership(m.id); toast('Áskrift stöðvuð'); refresh() } catch (e) { toast(errMsg(e)) } }}>Stöðva</button>}</div>
                   </div>

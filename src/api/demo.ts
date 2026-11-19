@@ -14,6 +14,7 @@ import supportSql from '../../supabase/migrations/013_skilabod.sql?raw'
 import promoSql from '../../supabase/migrations/014_samstarf.sql?raw'
 import waitSql from '../../supabase/migrations/015_bidlisti.sql?raw'
 import promo2Sql from '../../supabase/migrations/016_samstarf_fleiri.sql?raw'
+import punchSql from '../../supabase/migrations/018_klippikort.sql?raw'
 import demoSql from '../../supabase/demo/demo_seed.sql?raw'
 import type { Api, Profile, Settings, Workout } from './types'
 
@@ -47,6 +48,7 @@ export async function demoApi(): Promise<Api> {
   await db.exec(promoSql)
   await db.exec(waitSql)
   await db.exec(promo2Sql)
+  await db.exec(punchSql)
   await db.exec(demoSql)
 
   let current: string | null = sessionStorageGet()
@@ -160,10 +162,13 @@ export async function demoApi(): Promise<Api> {
       await write(`update profiles set ${keys.map((k, i) => `${k} = $${i + 2}`).join(', ')} where id = $1`, [id, ...keys.map((k) => (patch as Record<string, unknown>)[k] ?? null)])
     },
     deleteProfile: async (id) => { await write(`delete from profiles where id = $1`, [id]) },
-    membershipsOf: (id) => rows(`select id, plan, to_char(starts_on, 'YYYY-MM-DD') starts_on, to_char(ends_on, 'YYYY-MM-DD') ends_on, status, source from memberships where profile_id = $1 order by starts_on desc`, [id]),
+    membershipsOf: (id) => rows(`select id, plan, to_char(starts_on, 'YYYY-MM-DD') starts_on, to_char(ends_on, 'YYYY-MM-DD') ends_on, status, source, punches, punches_before from memberships where profile_id = $1 order by starts_on desc`, [id]),
     attendanceOf: (id) => rows(`select * from my_attendance($1)`, [id]),
     liftsOf: (id) => rows(`select *, to_char(last_day, 'YYYY-MM-DD') as last_day from my_lifts($1)`, [id]).then(numify),
-    addMembership: async (m) => { await write(`insert into memberships (profile_id, plan, starts_on, ends_on) values ($1, $2, $3, $4)`, [m.profile_id, m.plan, m.starts_on, m.ends_on]) },
+    addMembership: async (m) => { await write(`insert into memberships (profile_id, plan, starts_on, ends_on, punches) values ($1, $2, $3, $4, $5)`, [m.profile_id, m.plan, m.starts_on, m.ends_on, m.punches ?? null]) },
+    updateMembership: async (id, pt) => { await write(`update memberships set punches = coalesce($2, punches), punches_before = coalesce($3, punches_before) where id = $1`, [id, pt.punches ?? null, pt.punches_before ?? null]) },
+    myPunchCards: () => rows(`select id, plan, punches, used, booked_ahead, to_char(ends_on, 'YYYY-MM-DD') ends_on from my_punch_cards()`),
+    punchUsage: (id) => rows(`select * from punch_usage($1)`, [id]),
     endMembership: async (id) => { await write(`update memberships set status = 'cancelled' where id = $1`, [id]) },
     uploadAvatar: async (pid, jpeg) => {
       const url = await new Promise<string>((ok) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.readAsDataURL(jpeg) })

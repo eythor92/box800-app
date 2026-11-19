@@ -28,6 +28,7 @@ try { await db.exec(fs.readFileSync(new URL('013_skilabod.sql', dir), 'utf8')); 
 try { await db.exec(fs.readFileSync(new URL('014_samstarf.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 014:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('015_bidlisti.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 015:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('016_samstarf_fleiri.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 016:', e.message, e.position); process.exit(1); }
+try { await db.exec(fs.readFileSync(new URL('018_klippikort.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 018:', e.message, e.position); process.exit(1); }
 console.log('Uppsetning tókst');
 
 // Notendur
@@ -195,6 +196,21 @@ ok((await q(`select * from class_list(now() - interval '1 day', now() + interval
 ok((await q(`select * from class_attendees($1)`, [wl.id])).length === 0, 'Án áskriftar: sést ekki hverjir eru skráðir');
 await as(members[1]);
 ok((await q(`select has_access() a`))[0].a === true && (await q(`select * from class_list(now() - interval '1 day', now() + interval '3 days')`)).length > 0, 'Með áskrift: sér tímatöflu');
+
+// Klippikort: 2 skipti
+await as(U.eythor);
+await q(`insert into memberships (profile_id, plan, punches) values ($1, '10 skipta kort', 2)`, [await pid(noSub)]);
+const pc = await q(`insert into classes (program_id, starts_at, ends_at, cap) select id, now() + interval '10 hours' + (g || ' minutes')::interval, now() + interval '11 hours' + (g || ' minutes')::interval, 20 from programs, generate_series(1, 3) g where name = 'Hreysti' returning id`);
+await as(noSub);
+ok((await q(`select has_access() a`))[0].a === true, 'Klippikort: aðgangur meðan skipti eru eftir');
+await q(`select book_class($1)`, [pc[0].id]); await q(`select book_class($1)`, [pc[1].id]);
+await expectErr(() => q(`select book_class($1)`, [pc[2].id]), 'Engin gild áskrift', 'Klippikort: ekki hægt að bóka þegar skiptin eru búin');
+ok((await q(`select * from my_punch_cards()`))[0].booked_ahead === 2, 'Klippikort: bókanir framundan sjást');
+await q(`select cancel_booking($1)`, [pc[1].id]);
+ok((await q(`select book_class($1) s`, [pc[2].id]))[0].s === 'booked', 'Klippikort: afbókun skilar skiptinu');
+await as(U.eythor); await q(`update memberships set punches_before = 2 where profile_id = $1`, [await pid(noSub)]);
+await as(noSub);
+ok((await q(`select has_access() a`))[0].a === false, 'Klippikort: búið → enginn aðgangur þótt gildistími sé eftir');
 
 // Eigið nafn á tíma
 await as(U.eythor);

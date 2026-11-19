@@ -152,6 +152,9 @@ export function supabaseApi(url: string, key: string): Api {
     attendanceOf: (id) => rpc('my_attendance', { p_profile: id }),
     liftsOf: (id) => rpc('my_lifts', { p_profile: id }),
     async addMembership(m) { must(await sb.from('memberships').insert({ ...m, source: 'manual' })) },
+    async updateMembership(id, patch) { must(await sb.from('memberships').update(patch).eq('id', id)) },
+    myPunchCards: () => rpc('my_punch_cards'),
+    punchUsage: (id) => rpc('punch_usage', { p_profile: id }),
     async endMembership(id) { must(await sb.from('memberships').update({ status: 'cancelled' }).eq('id', id)) },
     async uploadAvatar(profileId, jpeg) {
       const path = `${profileId}/${Date.now()}.jpg`

@@ -4,7 +4,8 @@ import { useData } from '../ctx'
 import { Icon } from '../components/Icon'
 import ClassSheet from '../components/ClassSheet'
 import PromoCard from '../components/PromoCard'
-import { addDays, dayKey, dayStart, DAYS_SHORT, hhmm, mondayOf, parseLines, relDay, today } from '../util'
+import { BUY_URL } from './NoAccess'
+import { addDays, dayKey, dayStart, DAYS_SHORT, hhmm, mondayOf, parseLines, relDay, today, dayLabel } from '../util'
 import { kg } from '../score'
 import { useNow } from '../kiosk/shared'
 
@@ -23,6 +24,7 @@ export default function Home() {
   const { data: programs } = useData((a) => a.programs())
   const { data: wods } = useData((a) => a.workouts(t, t), [t])
   const { data: promos } = useData((a) => a.myPromos())
+  const { data: cards } = useData((a) => a.myPunchCards())
 
   const upcoming = useMemo(() => (data ?? []).filter((c) => (c.my_status === 'booked' || c.my_status === 'waitlist') && new Date(c.ends_at) > now)
     .sort((a, b) => a.starts_at.localeCompare(b.starts_at)), [data, now])
@@ -83,6 +85,24 @@ export default function Home() {
         <div><span>Samtals</span><b>{total}</b><small>tímar</small></div>
         <div><span>Markmið</span><b>{goal}</b><small>vantar {goal - total}</small><i style={{ width: pct + '%' }} /></div>
       </section>
+
+      {/* Klippikort: skipti eftir */}
+      {(cards ?? []).map((k) => {
+        const left = Math.max(0, k.punches - k.used - k.booked_ahead)
+        return (
+          <section key={k.id} className="h-punch" aria-label={k.plan}>
+            <div className="row" style={{ justifyContent: 'space-between', gap: 10 }}>
+              <div><div className="label">{k.plan}</div><div className="h-punch-n"><b>{left}</b> {left === 1 ? 'skipti' : 'skipti'} eftir <small>af {k.punches}</small></div></div>
+              {k.ends_on && <div className="muted" style={{ fontSize: 13, textAlign: 'right' }}>Gildir til<br /><b style={{ color: 'var(--text)' }}>{dayLabel(k.ends_on)}{k.ends_on.slice(0, 4) !== today().slice(0, 4) ? ' ' + k.ends_on.slice(0, 4) : ''}</b></div>}
+            </div>
+            <div className="h-punch-dots" aria-hidden="true">
+              {Array.from({ length: k.punches }, (_, i) => <span key={i} className={i < k.used ? 'used' : i < k.used + k.booked_ahead ? 'booked' : ''} />)}
+            </div>
+            {k.booked_ahead > 0 && <div className="muted" style={{ fontSize: 13, marginTop: 6 }}>{k.booked_ahead} {k.booked_ahead === 1 ? 'bókaður tími' : 'bókaðir tímar'} framundan {k.booked_ahead === 1 ? 'er' : 'eru'} tekin frá.</div>}
+            {left === 0 && <a className="btn btn-primary btn-block" style={{ marginTop: 10 }} href={BUY_URL} target="_blank" rel="noreferrer">Kaupa nýtt kort</a>}
+          </section>
+        )
+      })}
 
       {/* Kynningar frá samstarfsaðilum */}
       {(promos ?? []).map((p) => <div key={p.id} style={{ padding: '14px 16px 0' }}><PromoCard p={p} /></div>)}

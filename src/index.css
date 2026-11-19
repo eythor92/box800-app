@@ -530,3 +530,12 @@ body.a-locked { overflow: hidden; }
   .m-nav a { min-height: 58px; }
   .m-content { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
 }
+/* Klippikort á forsíðu */
+.h-punch { margin: 14px 16px 0; padding: 16px; border: 1px solid var(--line-2); border-radius: var(--r); background: var(--card); }
+.h-punch-n { font-size: 15px; color: var(--text-2); margin-top: 2px; }
+.h-punch-n b { font-family: 'Barlow Condensed', sans-serif; font-size: 40px; color: #fff; margin-right: 4px; vertical-align: -4px; }
+.h-punch-n small { color: var(--muted); }
+.h-punch-dots { display: grid; grid-template-columns: repeat(10, 1fr); gap: 6px; margin-top: 12px; }
+.h-punch-dots span { height: 10px; border-radius: 99px; background: var(--accent); }
+.h-punch-dots span.used { background: var(--line-2); }
+.h-punch-dots span.booked { background: #f2b84b; }

@@ -19,7 +19,8 @@ export interface Profile {
   is_dependent?: boolean
   created_at?: string
 }
-export interface Membership { id: number; plan: string; starts_on: string; ends_on: string | null; status: string; source: string }
+export interface Membership { id: number; plan: string; starts_on: string; ends_on: string | null; status: string; source: string; punches?: number | null; punches_before?: number }
+export interface PunchCard { id: number; plan: string; punches: number; used: number; booked_ahead: number; ends_on: string | null }
 
 export interface ClassRow {
   id: number
@@ -233,7 +234,10 @@ export interface Api {
   membershipsOf(id: string): Promise<Membership[]>
   attendanceOf(id: string): Promise<Attendance[]>
   liftsOf(id: string): Promise<LiftSummary[]>
-  addMembership(m: { profile_id: string; plan: string; starts_on: string; ends_on: string | null }): Promise<void>
+  addMembership(m: { profile_id: string; plan: string; starts_on: string; ends_on: string | null; punches?: number | null }): Promise<void>
+  updateMembership(id: number, patch: { punches?: number | null; punches_before?: number }): Promise<void>
+  myPunchCards(): Promise<PunchCard[]>
+  punchUsage(profileId: string): Promise<{ id: number; used: number; booked_ahead: number }[]>
   endMembership(id: number): Promise<void>
   /** Hleður upp mynd (JPEG) og setur sem prófílmynd. Skilar slóðinni. */
   uploadAvatar(profileId: string, jpeg: Blob): Promise<string>

@@ -139,3 +139,7 @@ insert into promos (partner, title, body, code, url, audience_plan, copies, clic
 values ('Yrja', '20% afsláttur í vefverslun', 'Fyrir mömmurnar í Mömmuhreysti. Gildir út desember.', 'BOX800', 'yrja.is', 'Mömmuhreysti', 7, 12);
 insert into memberships (profile_id, plan)
 select id, 'Mömmuhreysti' from profiles where role = 'member' and full_name like '%dóttir' order by full_name limit 4;
+
+-- Klippikort fyrir Jón (sýnir „skipti eftir“ á forsíðu)
+update memberships m set plan = '10 skipta kort', punches = 10, punches_before = 3, ends_on = current_date + 325
+from profiles p where p.id = m.profile_id and p.full_name = 'Jón Jónsson';
