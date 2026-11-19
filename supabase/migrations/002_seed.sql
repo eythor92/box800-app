@@ -9,8 +9,7 @@ insert into programs (name, color, default_cap, sort) values
   ('Mömmugrunnur', '#ff99d6', 18, 5),
   ('Konuhreysti', '#c372ea', 16, 6),
   ('Þolþjálfun', '#5ce0e6', 16, 7),
-  ('Barre', '#c0c7d1', 16, 8),
-  ('Parahreysti', '#f2a65a', 16, 9)
+  ('Barre', '#c0c7d1', 16, 8)
 on conflict (name) do update set color = excluded.color, default_cap = excluded.default_cap, sort = excluded.sort;
 
 insert into class_slots (program_id, weekday, start_time, end_time)
@@ -59,8 +58,8 @@ select p.id, v.wd, v.st::time, v.et::time from (values
   ('Mömmuhreysti', 5, '10:30', '11:30'),
   ('Hreysti', 5, '12:00', '12:50'),
   ('Hreysti', 5, '16:30', '17:30'),
-  ('Parahreysti', 6, '08:30', '09:30'),
-  ('Parahreysti', 6, '09:35', '10:35'),
+  ('Hreysti', 6, '08:30', '09:30'),
+  ('Hreysti', 6, '09:35', '10:35'),
   ('Hreysti', 7, '10:00', '11:00')
 ) as v(prog, wd, st, et) join programs p on p.name = v.prog
 on conflict (program_id, weekday, start_time) do nothing;

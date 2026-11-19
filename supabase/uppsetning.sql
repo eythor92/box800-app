@@ -1,4 +1,4 @@
--- BOX800 – uppsetning gagnagrunns (001 + 002 + 005 + 007 – 016). Líma allt í Supabase → SQL Editor → Run.
+-- BOX800 – uppsetning gagnagrunns (001 + 002 + 005 + 007 – 017). Líma allt í Supabase → SQL Editor → Run.
 -- =====================================================================
 -- BOX800 – gagnagrunnur
 -- Keyrt einu sinni í Supabase: SQL Editor → New query → líma → Run.
@@ -710,8 +710,7 @@ insert into programs (name, color, default_cap, sort) values
   ('Mömmugrunnur', '#ff99d6', 18, 5),
   ('Konuhreysti', '#c372ea', 16, 6),
   ('Þolþjálfun', '#5ce0e6', 16, 7),
-  ('Barre', '#c0c7d1', 16, 8),
-  ('Parahreysti', '#f2a65a', 16, 9)
+  ('Barre', '#c0c7d1', 16, 8)
 on conflict (name) do update set color = excluded.color, default_cap = excluded.default_cap, sort = excluded.sort;
 
 insert into class_slots (program_id, weekday, start_time, end_time)
@@ -760,8 +759,8 @@ select p.id, v.wd, v.st::time, v.et::time from (values
   ('Mömmuhreysti', 5, '10:30', '11:30'),
   ('Hreysti', 5, '12:00', '12:50'),
   ('Hreysti', 5, '16:30', '17:30'),
-  ('Parahreysti', 6, '08:30', '09:30'),
-  ('Parahreysti', 6, '09:35', '10:35'),
+  ('Hreysti', 6, '08:30', '09:30'),
+  ('Hreysti', 6, '09:35', '10:35'),
   ('Hreysti', 7, '10:00', '11:00')
 ) as v(prog, wd, st, et) join programs p on p.name = v.prog
 on conflict (program_id, weekday, start_time) do nothing;
@@ -1501,4 +1500,33 @@ language sql stable security definer set search_path = public as $$
       and m.status = 'active' and m.starts_on <= current_date and (m.ends_on is null or m.ends_on >= current_date)
       and plan_matches(m.plan, p_plan))
 $$;
+
+-- =====================================================================
+-- BOX800 – Parahreysti fellur út. Laugardagstímarnir verða venjulegt Hreysti.
+-- Fjöldi í tíma helst óbreyttur (16), honum má breyta í Dagatal og fjöldi.
+-- Má keyra aftur án skaða.
+-- =====================================================================
+do $$
+declare para int; hrey int; para_cap int;
+begin
+  select id, default_cap into para, para_cap from programs where name = 'Parahreysti';
+  select id into hrey from programs where name = 'Hreysti';
+  if para is null or hrey is null then return; end if;
+
+  -- Fastir tímar (laugardagar) og stakir tímar
+  update class_slots set program_id = hrey, cap = coalesce(cap, para_cap) where program_id = para;
+  update classes set program_id = hrey, cap = coalesce(cap, para_cap) where program_id = para;
+
+  -- Æfingar: færa á Hreysti ef sá dagur er laus, annars eyða Parahreysti-æfingunni
+  update workouts w set program_id = hrey
+  where w.program_id = para and not exists (select 1 from workouts x where x.program_id = hrey and x.day = w.day);
+  delete from workouts where program_id = para;
+
+  -- Taka námskeiðið út (eða fela ef eitthvað vísar enn á það)
+  begin
+    delete from programs where id = para;
+  exception when foreign_key_violation then
+    update programs set active = false where id = para;
+  end;
+end $$;
 
