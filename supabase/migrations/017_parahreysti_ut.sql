@@ -1,6 +1,6 @@
 -- =====================================================================
 -- BOX800 – Parahreysti fellur út. Laugardagstímarnir verða venjulegt Hreysti.
--- Fjöldi í tíma helst óbreyttur (16), honum má breyta í Dagatal og fjöldi.
+-- Laugardagstímar Hreysti: hámark 28.
 -- Má keyra aftur án skaða.
 -- =====================================================================
 do $$
@@ -26,3 +26,10 @@ begin
     update programs set active = false where id = para;
   end;
 end $$;
+
+-- Laugardagar í Hreysti: hámark 28 (fastir tímar og tímar sem eru komnir í töflu)
+update class_slots s set cap = 28
+from programs p where p.id = s.program_id and p.name = 'Hreysti' and s.weekday = 6;
+update classes c set cap = 28
+from programs p where p.id = c.program_id and p.name = 'Hreysti'
+  and extract(isodow from c.starts_at at time zone 'Atlantic/Reykjavik') = 6 and c.starts_at >= date_trunc('day', now());
