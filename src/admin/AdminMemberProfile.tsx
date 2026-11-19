@@ -79,7 +79,8 @@ export default function AdminMemberProfile() {
   function setRole(coach: boolean, admin: boolean) {
     const role: Role = admin ? 'owner' : coach ? 'coach' : 'member'
     if (role === p!.role) return
-    save({ role }, role === 'owner' ? `${p!.full_name} er nú stjórnandi` : role === 'coach' ? `${p!.full_name} er nú þjálfari` : `${p!.full_name} er nú iðkandi`)
+    if (role === 'owner' && !window.confirm(`Gera ${p!.full_name} að eiganda? Viðkomandi fær aðgang að öllu í stjórnborðinu, líka innsýn og öllum iðkendum.`)) return
+    save({ role }, role === 'owner' ? `${p!.full_name} er nú eigandi` : role === 'coach' ? `${p!.full_name} er nú þjálfari` : `${p!.full_name} er nú iðkandi`)
   }
 
   const tabs: [Tab, string][] = [['info', 'Persónuupplýsingar'], ['membership', 'Áskrift'], ['attendance', 'Mæting'], ['results', 'Árangur']]
@@ -173,7 +174,7 @@ export default function AdminMemberProfile() {
             {([
               ['Iðkandi', 'Bókar sig í tíma, sér æfingar og skráir skor', true, true],
               ['Þjálfari', 'Sér nafnalista, skráir mætingu, breytir fjölda og aflýsir tímum', p.role !== 'member', isMe],
-              ['Stjórnandi', 'Allt: æfingar dagsins, tímatafla, stillingar og iðkendur', p.role === 'owner', isMe],
+              ['Eigandi', 'Allt: stjórnborð, æfingar, tímatafla, stillingar, iðkendur, innsýn og samstarf. Getur gert aðra að eigendum.', p.role === 'owner', isMe],
             ] as const).map(([l, d, on, locked], i) => (
               <label key={l} className="mp-role-row" style={{ opacity: locked && i > 0 ? 0.7 : 1 }}>
                 <input type="checkbox" checked={on} disabled={locked || busy}
