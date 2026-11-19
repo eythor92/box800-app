@@ -237,6 +237,10 @@ export interface Api {
   addMembership(m: { profile_id: string; plan: string; starts_on: string; ends_on: string | null; punches?: number | null }): Promise<void>
   updateMembership(id: number, patch: { punches?: number | null; punches_before?: number }): Promise<void>
   myPunchCards(): Promise<PunchCard[]>
+  // einkaþjálfun (1 on 1)
+  hasPt(profileId?: string): Promise<boolean>
+  ptWorkouts(profileId: string | null, from: string, to: string): Promise<Workout[]>
+  savePtWorkout(profileId: string, day: string, components: WorkoutComponent[], status: Workout['status']): Promise<void>
   punchUsage(profileId: string): Promise<{ id: number; used: number; booked_ahead: number }[]>
   endMembership(id: number): Promise<void>
   /** Hleður upp mynd (JPEG) og setur sem prófílmynd. Skilar slóðinni. */

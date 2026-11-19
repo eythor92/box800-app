@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
-import type { Api, Profile } from './types'
+import type { Api, Profile, Workout, WorkoutComponent } from './types'
 
 export function supabaseApi(url: string, key: string): Api {
   // Hlekkir úr tölvupósti (staðfesting, nýtt lykilorð) koma með #access_token=… í slóðinni.
@@ -154,6 +154,14 @@ export function supabaseApi(url: string, key: string): Api {
     async addMembership(m) { must(await sb.from('memberships').insert({ ...m, source: 'manual' })) },
     async updateMembership(id, patch) { must(await sb.from('memberships').update(patch).eq('id', id)) },
     myPunchCards: () => rpc('my_punch_cards'),
+    hasPt: (id) => rpc('has_pt', id ? { p_profile: id } : {}),
+    async ptWorkouts(id, from, to) {
+      let qy = sb.from('pt_workouts').select('id, profile_id, day, components, status').gte('day', from).lte('day', to)
+      if (id) qy = qy.eq('profile_id', id)
+      return (must(await qy) as { id: number; day: string; components: WorkoutComponent[]; status: Workout['status'] }[])
+        .map((r) => ({ ...r, program_id: 0, publish_mode: 'now' as const }))
+    },
+    async savePtWorkout(id, day, components, status) { await rpc('save_pt_workout', { p_profile: id, p_day: day, p_components: components, p_status: status }) },
     punchUsage: (id) => rpc('punch_usage', { p_profile: id }),
     async endMembership(id) { must(await sb.from('memberships').update({ status: 'cancelled' }).eq('id', id)) },
     async uploadAvatar(profileId, jpeg) {

@@ -5,7 +5,7 @@ import { Icon, Avatar } from '../components/Icon'
 import { relDay, shortTime } from '../util'
 import { BUY_URL } from './NoAccess'
 
-const TITLES: Record<string, string> = { '/timatafla': 'Tímatafla', '/aefing': 'Æfing', '/maeting': 'Mæting', '/thjalfari': 'Tímar', '/thjalfari/aefing': 'Æfing' }
+const TITLES: Record<string, string> = { '/timatafla': 'Tímatafla', '/aefing': 'Æfing', '/maeting': 'Mæting', '/einkathjalfun': '1 on 1', '/thjalfari': 'Tímar', '/thjalfari/aefing': 'Æfing' }
 
 export default function MobileShell() {
   const { api, me, refresh, access } = useApp()
@@ -27,6 +27,8 @@ export default function MobileShell() {
   const isClassPage = loc.pathname.startsWith('/thjalfari/timi')
   const title = (loc.pathname === '/profill' ? 'Prófíll' : TITLES[loc.pathname]) ?? (loc.pathname.startsWith('/arangur') ? 'Árangur' : loc.pathname.startsWith('/stigatafla') ? 'Stigatafla' : undefined)
 
+  const { data: hasPt } = useData((a) => (access === false ? Promise.resolve(false) : a.hasPt()), [access])
+
   async function openBell() {
     setBell(true)
     if (unread) { await api.markNotificationsRead(); refresh() }
@@ -35,7 +37,7 @@ export default function MobileShell() {
   const tabs = coachMode
     ? [['/thjalfari', 'Tímar', 'check'], ['/thjalfari/aefing', 'Æfing', 'dumb']]
     : access === false ? [['/', 'Heim', 'home'], ['/profill', 'Prófíll', 'user']]
-    : [['/', 'Heim', 'home'], ['/timatafla', 'Tímatafla', 'cal'], ['/aefing', 'Æfing', 'dumb'], ['/maeting', 'Mæting', 'check']]
+    : [['/', 'Heim', 'home'], ['/timatafla', 'Tímatafla', 'cal'], ['/aefing', 'Æfing', 'dumb'], ['/maeting', 'Mæting', 'check'], ...(hasPt ? [['/einkathjalfun', '1 on 1', 'user']] : [])]
 
   return (
     <div className="m-shell">

@@ -3,6 +3,7 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { getApi, type Api, type Profile } from './api'
 import { AppCtx, useToast } from './ctx'
 import Login from './pages/Login'
+import PtView from './pages/PtView'
 import NewPassword from './pages/NewPassword'
 import MobileShell from './pages/MobileShell'
 import Home from './pages/Home'
@@ -109,6 +110,7 @@ export default function App() {
             <Route path="/timatafla" element={<Schedule />} />
             <Route path="/aefing" element={<WorkoutView />} />
             <Route path="/maeting" element={<Attendance />} />
+            <Route path="/einkathjalfun" element={<PtView />} />
             <Route path="/arangur" element={<Results />} />
             <Route path="/profill" element={<MyProfile />} />
             <Route path="/arangur/:id" element={<LiftHistory />} />

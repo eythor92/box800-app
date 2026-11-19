@@ -29,6 +29,7 @@ try { await db.exec(fs.readFileSync(new URL('014_samstarf.sql', dir), 'utf8')); 
 try { await db.exec(fs.readFileSync(new URL('015_bidlisti.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 015:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('016_samstarf_fleiri.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 016:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('018_klippikort.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 018:', e.message, e.position); process.exit(1); }
+try { await db.exec(fs.readFileSync(new URL('019_einkathjalfun.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 019:', e.message, e.position); process.exit(1); }
 console.log('Uppsetning tókst');
 
 // Notendur
@@ -211,6 +212,17 @@ ok((await q(`select book_class($1) s`, [pc[2].id]))[0].s === 'booked', 'Klippiko
 await as(U.eythor); await q(`update memberships set punches_before = 2 where profile_id = $1`, [await pid(noSub)]);
 await as(noSub);
 ok((await q(`select has_access() a`))[0].a === false, 'Klippikort: búið → enginn aðgangur þótt gildistími sé eftir');
+
+// Einkaþjálfun
+const ptp = await pid(members[2]);
+await as(members[2]); ok((await q(`select has_pt() x`))[0].x === false, '1 on 1: ekki án einkaþjálfunar');
+await expectErr(() => q(`select save_pt_workout($1, current_date, '[{"type":"metcon","body":"x"}]', 'published')`, [ptp]), 'Aðeins þjálfarar', '1 on 1: iðkandi getur ekki skrifað');
+await as(U.eythor);
+await q(`insert into memberships (profile_id, plan) values ($1, 'Einkaþjálfun')`, [await pid(members[2])]);
+await q(`select save_pt_workout($1, current_date, '[{"type":"metcon","title":"Dagur 1","body":"5x5"}]', 'published')`, [await pid(members[2])]);
+await as(members[2]);
+ok((await q(`select has_pt() x`))[0].x === true, '1 on 1: með einkaþjálfun');
+ok((await q(`select count(*)::int n from notifications where kind = 'pt'`))[0].n === 1, '1 on 1: tilkynning við birtingu');
 
 // Eigið nafn á tíma
 await as(U.eythor);

@@ -7,8 +7,9 @@ import AvatarUpload from '../components/AvatarUpload'
 import { addDays, cap1, dayKey, dayLabel, dayStart, errMsg, hhmm, relDay, today } from '../util'
 import { kg } from '../score'
 import { PLAN_GROUPS, findPlan, planEnd } from '../plans'
+import PtPlanner from './PtPlanner'
 
-type Tab = 'info' | 'membership' | 'attendance' | 'results'
+type Tab = 'info' | 'membership' | 'attendance' | 'results' | 'pt'
 
 /** Fæðingardagur út frá kennitölu (DDMMÁÁ-NNNC, C = öld: 9 → 1900, 0 → 2000) */
 function birthFromKt(kt?: string | null): string | null {
@@ -85,7 +86,8 @@ export default function AdminMemberProfile() {
     save({ role }, role === 'owner' ? `${p!.full_name} er nú eigandi` : role === 'coach' ? `${p!.full_name} er nú þjálfari` : `${p!.full_name} er nú iðkandi`)
   }
 
-  const tabs: [Tab, string][] = [['info', 'Persónuupplýsingar'], ['membership', 'Áskrift'], ['attendance', 'Mæting'], ['results', 'Árangur']]
+  const hasPt = (ms ?? []).some((m) => m.status === 'active' && (!m.ends_on || m.ends_on >= today()) && /einkaþjálfun/i.test(m.plan))
+  const tabs: [Tab, string][] = [['info', 'Persónuupplýsingar'], ['membership', 'Áskrift'], ...(hasPt ? [['pt', '1 on 1'] as [Tab, string]] : []), ['attendance', 'Mæting'], ['results', 'Árangur']]
   const inp = (k: keyof Profile, label: string, props: React.InputHTMLAttributes<HTMLInputElement> = {}) => (
     <label className="field"><span>{label}</span><input className="input" value={(f[k] as string) ?? ''} onChange={(e) => set({ [k]: e.target.value })} {...props} /></label>
   )
@@ -257,6 +259,8 @@ export default function AdminMemberProfile() {
           )}
         </section>
       )}
+
+      {tab === 'pt' && p && <PtPlanner profileId={id} name={p.full_name} />}
 
       {tab === 'attendance' && (
         <section className="a-card" style={{ marginTop: 16 }}>

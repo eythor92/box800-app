@@ -27,6 +27,7 @@ export const PLAN_GROUPS: { label: string; plans: Plan[] }[] = [
     { name: 'Mömmuhreysti 4 vikur', days: 28 },
     { name: 'Þolþjálfun 5 vikur', days: 35 },
   ] },
+  { label: 'Einkaþjálfun', plans: [{ name: 'Einkaþjálfun' }, { name: 'Einkaþjálfun 1 mánuður', months: 1 }, { name: 'Einkaþjálfun 3 mánuðir', months: 3 }] },
   { label: 'Annað', plans: [{ name: 'Prufukort', days: 7 }, { name: 'Þjálfari' }] },
 ]
 

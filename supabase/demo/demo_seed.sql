@@ -143,3 +143,9 @@ select id, 'Mömmuhreysti' from profiles where role = 'member' and full_name lik
 -- Klippikort fyrir Jón (sýnir „skipti eftir“ á forsíðu)
 update memberships m set plan = '10 skipta kort', punches = 10, punches_before = 3, ends_on = current_date + 325
 from profiles p where p.id = m.profile_id and p.full_name = 'Jón Jónsson';
+
+-- Einkaþjálfun fyrir Jón (1 on 1)
+insert into memberships (profile_id, plan) select id, 'Einkaþjálfun' from profiles where full_name = 'Jón Jónsson';
+insert into pt_workouts (profile_id, day, status, components)
+select id, current_date, 'published', '[{"type":"header","title":"Upphitun","key":"p1"},{"type":"metcon","title":"10 mín","body":"Hjól rólega\n10 air squats\n10 armbeygjur","key":"p2"},{"type":"metcon","title":"Styrkur","body":"*4 umferðir*\n8 goblet squat\n10 róður á hvora hendi\n30s planki","key":"p3"}]'
+from profiles where full_name = 'Jón Jónsson';

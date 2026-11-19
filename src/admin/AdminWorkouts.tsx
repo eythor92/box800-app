@@ -98,9 +98,11 @@ export default function AdminWorkouts() {
 }
 
 type Ctx = { programs: Program[]; movements: Movement[]; workouts: Workout[]; reloadMov: () => void }
+/** Einkaþjálfun: æfing fyrir einn iðkanda í stað námskeiðs */
+export type PtTarget = { profileId: string; name: string }
 
 /** Ritill fyrir eina æfingu (eitt námskeið, einn dag). „compact“ = dálkur í vikuritlinum. */
-function DayEditor({ prog, day, compact, programs, movements, workouts, reloadMov }: Ctx & { prog: number; day: string; compact?: boolean }) {
+export function DayEditor({ prog, day, compact, programs, movements, workouts, reloadMov, pt }: Ctx & { prog: number; day: string; compact?: boolean; pt?: PtTarget }) {
   const { api, toast, refresh } = useApp()
   const [draft, setDraft] = useState<Workout | null>(null)
   const [dirty, setDirty] = useState(false)
@@ -151,9 +153,11 @@ function DayEditor({ prog, day, compact, programs, movements, workouts, reloadMo
     if (prog == null) return
     setSaving(true)
     try {
-      await api.saveWorkout({ ...w, program_id: prog, day, status, components: w.components.map((c) => (c.key ? c : { ...c, key: newKey() })) })
+      const comps = w.components.map((c) => (c.key ? c : { ...c, key: newKey() }))
+      if (pt) await api.savePtWorkout(pt.profileId, day, comps, status)
+      else await api.saveWorkout({ ...w, program_id: prog, day, status, components: comps })
       setDirty(false); setOpenKeys(new Set()); refresh()
-      const when = status === 'draft' ? 'Vistað sem drög' : w.publish_mode === 'now' ? 'Vistað – iðkendur sjá æfinguna núna' : 'Vistað – ' + publishText(w.publish_mode, day).replace('Birtist iðkendum', 'sést')
+      const when = status === 'draft' ? 'Vistað sem drög' : pt ? `Vistað – ${pt.name.split(' ')[0]} sér æfinguna núna` : w.publish_mode === 'now' ? 'Vistað – iðkendur sjá æfinguna núna' : 'Vistað – ' + publishText(w.publish_mode, day).replace('Birtist iðkendum', 'sést')
       toast(when)
     } catch (e) { toast(errMsg(e)) } finally { setSaving(false) }
   }
@@ -183,7 +187,11 @@ function DayEditor({ prog, day, compact, programs, movements, workouts, reloadMo
                   <button className="icon-btn" style={{ width: 36, height: 36 }} aria-label="Færa niður" onClick={() => i < w.components.length - 1 && set((n) => { [n.components[i + 1], n.components[i]] = [n.components[i], n.components[i + 1]] })}><Icon name="down" size={18} /></button>
                   <button className="btn btn-sm" style={{ color: 'var(--accent)' }} onClick={async () => {
                     const d = addDays(day, 1), ex = (workouts ?? []).find((z) => z.program_id === prog && z.day === d)
-                    try { await api.saveWorkout({ ...(ex ?? { program_id: prog!, day: d, status: 'draft', publish_mode: w.publish_mode, components: [] }), day: d, components: [...(ex?.components ?? []), structuredClone(c)] }); refresh(); toast('Hluti afritaður á ' + dayLabel(d)) } catch (e) { toast(errMsg(e)) }
+                    try {
+                      if (pt) await api.savePtWorkout(pt.profileId, d, [...(ex?.components ?? []), structuredClone(c)], ex?.status ?? 'draft')
+                      else await api.saveWorkout({ ...(ex ?? { program_id: prog!, day: d, status: 'draft', publish_mode: w.publish_mode, components: [] }), day: d, components: [...(ex?.components ?? []), structuredClone(c)] })
+                      refresh(); toast('Hluti afritaður á ' + dayLabel(d))
+                    } catch (e) { toast(errMsg(e)) }
                   }} title="Afrita þennan hluta á næsta dag"><Icon name="reuse" size={16} />{!compact && 'Endurnýta'}</button>
                   <button className="icon-btn" style={{ width: 36, height: 36, color: 'var(--danger)' }} aria-label="Eyða hluta" onClick={() => set((n) => { n.components.splice(i, 1) })}><Icon name="trash" size={18} /></button>
                 </div>
@@ -254,14 +262,14 @@ function DayEditor({ prog, day, compact, programs, movements, workouts, reloadMo
               <>
                 <button className="btn btn-block" style={{ marginTop: 14, border: '1.5px dashed var(--accent)', color: 'var(--accent)' }} onClick={() => setChooser(true)}>+ Bæta við hluta</button>
                 <div className="row" style={{ flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: 22, paddingTop: 18, borderTop: '1px solid var(--line)', gap: 14 }}>
-                  <div>
+                  {pt ? <div className="muted" style={{ fontSize: 14 }}>Aðeins {pt.name.split(' ')[0]} sér þessa æfingu, strax og hún er vistuð.</div> : <div>
                     <label className="field"><span>Hvenær sjá iðkendur æfinguna?</span>
                       <select className="select" style={{ minWidth: compact ? 0 : 260, width: compact ? '100%' : undefined }} value={w.publish_mode} onChange={(e) => set((n) => { n.publish_mode = e.target.value as Workout['publish_mode'] })}>
                         {MODES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
                       </select>
                     </label>
                     <div className="row" style={{ marginTop: 6, gap: 6, fontSize: 14, color: 'var(--text-2)' }}><Icon name="clock" size={16} color="var(--accent)" />{publishText(w.publish_mode, day)}</div>
-                  </div>
+                  </div>}
                   <div className="row">
                     <button className="btn btn-ghost" disabled={saving} onClick={() => save('draft')}>Vista sem drög</button>
                     <button className="btn btn-primary" disabled={saving} onClick={() => save('published')}>Vista</button>

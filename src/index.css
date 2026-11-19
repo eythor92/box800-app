@@ -539,3 +539,4 @@ body.a-locked { overflow: hidden; }
 .h-punch-dots span { height: 10px; border-radius: 99px; background: var(--accent); }
 .h-punch-dots span.used { background: var(--line-2); }
 .h-punch-dots span.booked { background: #f2b84b; }
+.wk-col .label.grow { min-width: 0; overflow: hidden; text-overflow: ellipsis; }

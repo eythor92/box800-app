@@ -15,6 +15,7 @@ import promoSql from '../../supabase/migrations/014_samstarf.sql?raw'
 import waitSql from '../../supabase/migrations/015_bidlisti.sql?raw'
 import promo2Sql from '../../supabase/migrations/016_samstarf_fleiri.sql?raw'
 import punchSql from '../../supabase/migrations/018_klippikort.sql?raw'
+import ptSql from '../../supabase/migrations/019_einkathjalfun.sql?raw'
 import demoSql from '../../supabase/demo/demo_seed.sql?raw'
 import type { Api, Profile, Settings, Workout } from './types'
 
@@ -49,6 +50,7 @@ export async function demoApi(): Promise<Api> {
   await db.exec(waitSql)
   await db.exec(promo2Sql)
   await db.exec(punchSql)
+  await db.exec(ptSql)
   await db.exec(demoSql)
 
   let current: string | null = sessionStorageGet()
@@ -169,6 +171,10 @@ export async function demoApi(): Promise<Api> {
     updateMembership: async (id, pt) => { await write(`update memberships set punches = coalesce($2, punches), punches_before = coalesce($3, punches_before) where id = $1`, [id, pt.punches ?? null, pt.punches_before ?? null]) },
     myPunchCards: () => rows(`select id, plan, punches, used, booked_ahead, to_char(ends_on, 'YYYY-MM-DD') ends_on from my_punch_cards()`),
     punchUsage: (id) => rows(`select * from punch_usage($1)`, [id]),
+    hasPt: (id) => one<{ x: boolean }>(`select has_pt($1) x`, [id ?? null]).then((r) => !!r?.x),
+    ptWorkouts: (id, from, to) => rows<Workout>(`select id, 0 as program_id, to_char(day, 'YYYY-MM-DD') as day, components, status, 'now' as publish_mode from pt_workouts
+       where day between $2 and $3 and ($1::uuid is null or profile_id = $1) and (is_staff() or (status = 'published' and profile_id = me()))`, [id, from, to]),
+    savePtWorkout: async (id, day, c, st) => { await write(`select save_pt_workout($1, $2, $3, $4)`, [id, day, JSON.stringify(c), st]) },
     endMembership: async (id) => { await write(`update memberships set status = 'cancelled' where id = $1`, [id]) },
     uploadAvatar: async (pid, jpeg) => {
       const url = await new Promise<string>((ok) => { const r = new FileReader(); r.onload = () => ok(String(r.result)); r.readAsDataURL(jpeg) })
