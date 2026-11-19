@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import type { Profile, Role } from '../api'
 import { useApp, useData } from '../ctx'
 import { Icon } from '../components/Icon'
@@ -45,7 +45,8 @@ export default function AdminMemberProfile() {
   const [pe, setPe] = useState<null | { id: number; punches: string; before: string }>(null)
   const { data: att } = useData((a) => a.attendanceOf(id), [id])
   const { data: lifts } = useData((a) => a.liftsOf(id), [id])
-  const [tab, setTab] = useState<Tab>('info')
+  const loc = useLocation()
+  const [tab, setTab] = useState<Tab>(() => (new URLSearchParams(loc.search).get('t') as Tab) || 'info')
   const [f, setF] = useState<Partial<Profile> | null>(null)
   const [menu, setMenu] = useState(false)
   const [addCls, setAddCls] = useState(false)

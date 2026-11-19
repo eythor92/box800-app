@@ -95,14 +95,17 @@ export default function MobileShell() {
             <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 6 }}>Tilkynningar</div>
             {(notes ?? []).length === 0 && <div className="muted" style={{ padding: '12px 0' }}>Engar tilkynningar enn.</div>}
             {(notes ?? []).map((n) => (
-              <div key={n.id} style={{ display: 'flex', gap: 12, padding: '12px 0', borderTop: '1px solid var(--line)', cursor: n.kind === 'support' ? 'pointer' : undefined }}
-                onClick={n.kind === 'support' ? () => { setBell(false); nav('/stjorn/idkendur') } : undefined}>
+              <div key={n.id} role={n.link ? 'button' : undefined} tabIndex={n.link ? 0 : undefined}
+                style={{ display: 'flex', gap: 12, padding: '12px 0', borderTop: '1px solid var(--line)', cursor: n.link ? 'pointer' : undefined }}
+                onClick={n.link ? () => { setBell(false); nav(n.link!) } : undefined}
+                onKeyDown={n.link ? (e) => { if (e.key === 'Enter') { setBell(false); nav(n.link!) } } : undefined}>
                 <span style={{ width: 8, height: 8, borderRadius: 9, marginTop: 7, background: n.read_at ? 'var(--line-2)' : 'var(--accent)', flexShrink: 0 }} />
                 <div>
                   <div style={{ fontWeight: 600 }}>{n.title}</div>
                   {n.body && <div className="muted" style={{ fontSize: 14 }}>{n.body}</div>}
                   <div className="muted" style={{ fontSize: 12 }}>{relDay(n.created_at)} kl. {shortTime(n.created_at)}</div>
                 </div>
+                {n.link && <Icon name="next" size={18} color="var(--muted)" style={{ marginLeft: 'auto', alignSelf: 'center', flexShrink: 0 }} />}
               </div>
             ))}
           </div>

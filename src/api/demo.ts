@@ -17,6 +17,7 @@ import promo2Sql from '../../supabase/migrations/016_samstarf_fleiri.sql?raw'
 import punchSql from '../../supabase/migrations/018_klippikort.sql?raw'
 import ptSql from '../../supabase/migrations/019_einkathjalfun.sql?raw'
 import ptvSql from '../../supabase/migrations/020_myndbond.sql?raw'
+import linkSql from '../../supabase/migrations/021_tilkynningar_hlekkir.sql?raw'
 import demoSql from '../../supabase/demo/demo_seed.sql?raw'
 import type { Api, Profile, Settings, Workout } from './types'
 
@@ -53,6 +54,7 @@ export async function demoApi(): Promise<Api> {
   await db.exec(punchSql)
   await db.exec(ptSql)
   await db.exec(ptvSql)
+  await db.exec(linkSql)
   await db.exec(demoSql)
 
   const demoBlobs = new Map<string, string>()

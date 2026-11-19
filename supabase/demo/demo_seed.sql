@@ -155,3 +155,8 @@ insert into pt_videos (profile_id, day, path, note, size_bytes, created_at, feed
 select id, current_date - 1, id || '/demo.mp4', 'Er bakið nógu beint í neðstu stöðu?', 24000000, now() - interval '20 hours',
        'Mjög flott! Bakið er beint. Prófaðu að ýta hnjánum aðeins meira út í botninum.', now() - interval '18 hours'
 from profiles where full_name = 'Jón Jónsson';
+
+-- Tilkynning til eiganda um myndband (með hlekk)
+insert into notifications (profile_id, title, body, kind, link)
+select o.id, 'Nýtt myndband: Jón Jónsson', 'Er bakið nógu beint í neðstu stöðu?', 'pt_video', '/stjorn/idkendur/' || j.id || '?t=pt'
+from profiles o, profiles j where o.role = 'owner' and j.full_name = 'Jón Jónsson';

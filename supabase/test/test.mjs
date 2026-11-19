@@ -31,6 +31,7 @@ try { await db.exec(fs.readFileSync(new URL('016_samstarf_fleiri.sql', dir), 'ut
 try { await db.exec(fs.readFileSync(new URL('018_klippikort.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 018:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('019_einkathjalfun.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 019:', e.message, e.position); process.exit(1); }
 try { await db.exec(fs.readFileSync(new URL('020_myndbond.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 020:', e.message, e.position); process.exit(1); }
+try { await db.exec(fs.readFileSync(new URL('021_tilkynningar_hlekkir.sql', dir), 'utf8')); } catch (e) { console.log('VILLA 021:', e.message, e.position); process.exit(1); }
 console.log('Uppsetning tókst');
 
 // Notendur
@@ -227,6 +228,7 @@ ok((await q(`select count(*)::int n from notifications where kind = 'pt'`))[0].n
 const [vid] = await q(`insert into pt_videos (profile_id, day, path, note) values ($1::uuid, current_date, $1::text || '/a.mp4', 'Hvernig er formið?') returning id`, [ptp]);
 await as(U.eythor);
 ok((await q(`select count(*)::int n from notifications where kind = 'pt_video'`))[0].n >= 1, 'Myndband: eigandi fær tilkynningu');
+ok((await q(`select link from notifications where kind = 'pt_video' order by id desc limit 1`))[0].link === '/stjorn/idkendur/' + ptp + '?t=pt', 'Myndband: tilkynning vísar á prófílinn');
 await q(`select pt_video_feedback($1, 'Flott! Haltu bakinu beinu.')`, [vid.id]);
 await as(members[2]);
 ok((await q(`select count(*)::int n from notifications where kind = 'pt_feedback'`))[0].n === 1, 'Myndband: iðkandi fær endurgjöf');

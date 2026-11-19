@@ -11,6 +11,12 @@ export default function PtVideos({ profileId, day, staff, name }: { profileId: s
   const { api, toast, refresh } = useApp()
   const { data: all } = useData((a) => a.ptVideos(profileId), [profileId])
   const list = (all ?? []).filter((v) => !day || v.day === day)
+  // Komið úr tilkynningu (?t=pt): skruna beint niður að myndböndunum
+  useEffect(() => {
+    if (!staff || !all || !/[?&]t=pt/.test(location.hash)) return
+    const t = setTimeout(() => document.getElementById('pt-videos')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300)
+    return () => clearTimeout(t)
+  }, [staff, !!all]) // eslint-disable-line react-hooks/exhaustive-deps
   const file = useRef<HTMLInputElement>(null)
   const [pick, setPick] = useState<File | null>(null)
   const [note, setNote] = useState('')
@@ -25,7 +31,7 @@ export default function PtVideos({ profileId, day, staff, name }: { profileId: s
   }
 
   return (
-    <section className="ptv">
+    <section className="ptv" id={staff ? 'pt-videos' : undefined}>
       <div className="row" style={{ justifyContent: 'space-between', gap: 10 }}>
         <div className="label">{staff ? `Myndbönd frá ${name?.split(' ')[0] ?? 'iðkanda'}` : 'Myndband og endurgjöf'}</div>
         {!staff && day && !pick && <button className="btn btn-outline btn-sm" onClick={() => file.current?.click()}><Icon name="plus" size={16} />Senda myndband</button>}

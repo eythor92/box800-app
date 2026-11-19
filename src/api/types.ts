@@ -119,7 +119,7 @@ export interface MemberRow {
   member_since?: string | null
 }
 
-export interface Notification { id: number; title: string; body: string | null; created_at: string; read_at: string | null; kind?: string | null }
+export interface Notification { id: number; title: string; body: string | null; created_at: string; read_at: string | null; kind?: string | null; link?: string | null }
 export interface Promo { id: number; partner: string; title: string; body: string | null; code: string | null; url: string | null; logo_url: string | null }
 export interface PromoInput { id?: number; partner: string; title: string; body: string | null; code: string | null; url: string | null; logo_url: string | null; audience_plan: string | null; starts_on: string; ends_on: string | null; active: boolean }
 export interface PromoAdmin extends PromoInput { id: number; clicks: number; copies: number; created_at: string }

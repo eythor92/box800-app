@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { useApp, useData } from '../ctx'
 import { DayBar } from './Schedule'
 import { WorkoutRender } from './WorkoutView'
@@ -9,7 +10,8 @@ import PtVideos from '../components/PtVideos'
 /** 1 on 1: æfingar sem þjálfarinn skrifar bara fyrir þig */
 export default function PtView() {
   const { me } = useApp()
-  const [day, setDay] = useState(today())
+  const qd = new URLSearchParams(useLocation().search).get('d')
+  const [day, setDay] = useState(qd && /^\d{4}-\d{2}-\d{2}$/.test(qd) ? qd : today())
   useSwipeDays(() => setDay((d) => addDays(d, 1)), () => setDay((d) => addDays(d, -1)))
   const week = mondayOf(day)
   const { data: ws } = useData((a) => a.ptWorkouts(me.id, week, addDays(week, 6)), [week, me.id])
