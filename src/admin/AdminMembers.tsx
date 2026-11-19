@@ -23,8 +23,11 @@ export default function AdminMembers() {
   const { api, toast, refresh } = useApp()
   const { data, error } = useData((a) => a.members())
   const { data: inbox } = useData((a) => a.supportInbox())
-  const [tab, setTab] = useState<Tab>('active')
-  const [q, setQ] = useState('')
+  // Leit og flipi haldast þegar farið er inn á prófíl og til baka
+  const [tab, setTabRaw] = useState<Tab>(() => { try { return (sessionStorage.getItem('box800-members-tab') as Tab) || 'active' } catch { return 'active' } })
+  const [q, setQRaw] = useState(() => { try { return sessionStorage.getItem('box800-members-q') ?? '' } catch { return '' } })
+  const setTab = (t: Tab) => { setTabRaw(t); try { sessionStorage.setItem('box800-members-tab', t) } catch { /* */ } }
+  const setQ = (v: string) => { setQRaw(v); try { sessionStorage.setItem('box800-members-q', v) } catch { /* */ } }
   const nav = useNavigate()
   const [nw, setNw] = useState<null | { first: string; last: string; email: string; phone: string; kt: string; note: string; emergency: string; child: boolean }>(null)
 
@@ -77,6 +80,7 @@ export default function AdminMembers() {
       <div className="row" style={{ marginTop: 14, maxWidth: 520 }}>
         <Icon name="search" color="var(--muted)" />
         <input className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Leita að nafni, netfangi eða síma…" aria-label="Leita að iðkanda" />
+        {q && <button className="icon-btn" aria-label="Hreinsa leit" onClick={() => setQ('')}><Icon name="x" size={18} /></button>}
       </div>
       {error && <div className="error" style={{ marginTop: 16 }}>{error}</div>}
       <div className="a-table" style={{ marginTop: 16 }}>
